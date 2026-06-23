@@ -44,20 +44,3 @@ CarnyxQuest is a web-based gamification platform designed to support long-term a
 ### Deployment
 
 * Vercel
-
-## Installation
-
-```bash
-npm install
-npm run dev
-```
-
-## Research Purpose
-
-This application was developed as part of a Computer Science undergraduate thesis focusing on the design and implementation of a gamified platform to improve long-term carnivore diet adherence.
-
-## Author
-
-Pradanajati Aryawibowo |
- Computer Science |
- Bina Nusantara University
