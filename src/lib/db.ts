@@ -1163,13 +1163,9 @@ class SupabaseDB {
       workoutDate: string;
     }
   ): Promise<{ success: boolean; leveledUp: boolean; xpEarned: number }> {
-    if (!log.wgerExerciseId) {
-      throw new Error("Wger Exercise ID is not available. Please search and select a valid exercise from the live search suggestions list to register this metabolic workout.");
-    }
-
     const workoutRow = {
       profile_id: profileId,
-      wger_id: log.wgerExerciseId,
+      wger_id: log.wgerExerciseId || null,
       exercise_name: log.exerciseName,
       sets: log.sets,
       reps: log.reps,

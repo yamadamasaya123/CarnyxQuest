@@ -127,14 +127,6 @@ export default function LiveWorkouts({ profileId, onWorkoutLogged }: LiveWorkout
       return;
     }
 
-    if (!selectedWgerId) {
-      setSubmitFeedback({
-        success: false,
-        msg: "Wger Exercise ID is not available. Please search and select a valid exercise from the live search query list to register this metabolic workout."
-      });
-      return;
-    }
-
     try {
       setIsSubmitting(true);
       setSubmitFeedback(null);
@@ -297,7 +289,10 @@ export default function LiveWorkouts({ profileId, onWorkoutLogged }: LiveWorkout
                   required
                   placeholder="Selected or manual input name..."
                   value={exerciseName}
-                  onChange={(e) => setExerciseName(e.target.value)}
+                  onChange={(e) => {
+                    setExerciseName(e.target.value);
+                    setSelectedWgerId(undefined);
+                  }}
                   className="w-full bg-slate-900 border border-slate-800 focus:border-amber-500/50 rounded-xl px-4 py-2.5 text-xs text-white outline-none font-sans font-semibold"
                 />
               </div>
