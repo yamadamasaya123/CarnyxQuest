@@ -1,20 +1,63 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://ai.google.dev/static/site-assets/images/share-ais-513315318.png" />
-</div>
+# CarnyxQuest
 
-# Run and deploy your AI Studio app
+CarnyxQuest is a web-based gamification platform designed to support long-term adherence to the carnivore diet through achievements, quests, streak tracking, fasting management, workout logging, progression systems, and behavioral reinforcement mechanics.
 
-This contains everything you need to run your app locally.
+## Features
 
-View your app in AI Studio: https://ai.studio/apps/4738d9a1-6cab-4b6b-a176-f3c08f26427f
+* User Authentication
+* Daily Check-In System
+* Meal Logging
+* Fasting Tracker
+* Workout Logging
+* Achievement System
+* Challenges and Quests
+* XP and Level Progression
+* GP (Gold Points) Economy
+* Marrow Shield Protection System
+* USDA FoodData Central Integration
+* Wger Exercise Database Integration
 
-## Run Locally
+## Technology Stack
 
-**Prerequisites:**  Node.js
+### Frontend
 
+* React
+* TypeScript
+* Vite
+* Tailwind CSS
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+### Backend
+
+* Express.js
+* TypeScript
+
+### Database & Authentication
+
+* Supabase PostgreSQL
+* Supabase Auth
+
+### External APIs
+
+* USDA FoodData Central API
+* Wger API
+
+### Deployment
+
+* Vercel
+
+## Installation
+
+```bash
+npm install
+npm run dev
+```
+
+## Research Purpose
+
+This application was developed as part of a Computer Science undergraduate thesis focusing on the design and implementation of a gamified platform to improve long-term carnivore diet adherence.
+
+## Author
+
+Pradanajati Aryawibowo
+Computer Science
+Bina Nusantara University
