@@ -22,7 +22,6 @@ interface LiveMealsProps {
 
 export default function LiveMeals({ profileId, onLoggedSuccess, onSuccessNotification }: LiveMealsProps) {
   // Input fields
-  const [cutType, setCutType] = useState<string>("Ribeye"); // Category classification select
   const [foodNameInput, setFoodNameInput] = useState<string>(""); // USDA or Custom name
   const [weightGramsInput, setWeightGramsInput] = useState<string>("100");
   const weightGrams = parseInt(weightGramsInput, 10) || 0;
@@ -94,25 +93,9 @@ export default function LiveMeals({ profileId, onLoggedSuccess, onSuccessNotific
     setCalories(item.calories);
     setProteinGrams(item.proteinGrams);
     setFatGrams(item.fatGrams);
-    // Categorize
-    const nameLower = item.foodName.toLowerCase();
-    if (nameLower.includes("ribeye") || nameLower.includes("steak") || nameLower.includes("sirloin")) {
-      setCutType("Ribeye");
-    } else if (nameLower.includes("liver") || nameLower.includes("organ") || nameLower.includes("heart")) {
-      setCutType("Beef Liver");
-    } else if (nameLower.includes("belly") || nameLower.includes("pork") || nameLower.includes("bacon")) {
-      setCutType("Pork Belly");
-    } else if (nameLower.includes("salmon") || nameLower.includes("fish") || nameLower.includes("seafood")) {
-      setCutType("Salmon Fillet");
-    } else if (nameLower.includes("egg")) {
-      setCutType("Whole Eggs");
-    } else if (nameLower.includes("chicken")) {
-      setCutType("Skinless Chicken");
-    } else {
-      setCutType("Mixed Meat");
-    }
 
     // Is carb zero?
+    const nameLower = item.foodName.toLowerCase();
     const hasCarb = nameLower.includes("honey") || nameLower.includes("berry") || nameLower.includes("carbohydrate");
     setIsCarbZero(!hasCarb);
 
@@ -130,7 +113,7 @@ export default function LiveMeals({ profileId, onLoggedSuccess, onSuccessNotific
       return;
     }
 
-    const finalItemName = foodNameInput.trim() || `${weightGrams}g ${cutType}`;
+    const finalItemName = foodNameInput.trim() || `${weightGrams}g Carnivore Meal`;
 
     setIsSubmitting(true);
     try {
@@ -252,27 +235,18 @@ export default function LiveMeals({ profileId, onLoggedSuccess, onSuccessNotific
 
         {/* SECTION 3: EXACT LOGGING FORM */}
         <form onSubmit={handleSaveMeal} className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-[10px] uppercase font-bold tracking-wider mb-1.5 text-slate-400 font-mono">
-                Cut Classification
+                Meat Nom (Food Name Label)
               </label>
-              <select
-                value={cutType}
-                onChange={(e) => setCutType(e.target.value)}
-                className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-amber-500"
-              >
-                <option value="Ribeye">🥩 Ribeye Steak</option>
-                <option value="T-Bone">🥩 T-Bone Steak</option>
-                <option value="Ground Beef">🍖 Ground Beef</option>
-                <option value="Beef Liver">🫁 Primal Organ (Liver, etc.)</option>
-                <option value="Pork Belly">🥓 Pork Belly / Bacon</option>
-                <option value="Salmon Fillet">🐟 Salmon Fillet / Seafood</option>
-                <option value="Whole Eggs">🍳 Organic Eggs</option>
-                <option value="Bone Marrow">🦴 Bone Marrow / Tallow</option>
-                <option value="Skinless Chicken">🍗 Skinless Chicken / Poultry</option>
-                <option value="Mixed Meat">🥩 Mixed Carnivore plate</option>
-              </select>
+              <input
+                type="text"
+                value={foodNameInput}
+                onChange={(e) => setFoodNameInput(e.target.value)}
+                placeholder="e.g., Grass-fed NZ Ribeye Cut"
+                className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200 placeholder:text-slate-650 focus:outline-none focus:border-amber-500"
+              />
             </div>
 
             <div>
@@ -300,19 +274,6 @@ export default function LiveMeals({ profileId, onLoggedSuccess, onSuccessNotific
                 <Scale className="absolute right-3.5 top-2 w-4 h-4 text-slate-500" />
               </div>
             </div>
-          </div>
-
-          <div>
-            <label className="block text-[10px] uppercase font-bold tracking-wider mb-1.5 text-slate-400 font-mono">
-              Meat Nom (Food Name Label)
-            </label>
-            <input
-              type="text"
-              value={foodNameInput}
-              onChange={(e) => setFoodNameInput(e.target.value)}
-              placeholder="e.g., Grass-fed NZ Ribeye Cut"
-              className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200 placeholder:text-slate-650 focus:outline-none focus:border-amber-500"
-            />
           </div>
 
           {/* DYNAMIC NUTRITION FIELDS */}
