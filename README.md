@@ -58,6 +58,6 @@ This application was developed as part of a Computer Science undergraduate thesi
 
 ## Author
 
-Pradanajati Aryawibowo
-Computer Science
-Bina Nusantara University
+Pradanajati Aryawibowo |
+ Computer Science |
+ Bina Nusantara University
