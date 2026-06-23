@@ -24,15 +24,16 @@ export default function LiveMeals({ profileId, onLoggedSuccess, onSuccessNotific
   // Input fields
   const [cutType, setCutType] = useState<string>("Ribeye"); // Category classification select
   const [foodNameInput, setFoodNameInput] = useState<string>(""); // USDA or Custom name
-  const [weightGrams, setWeightGrams] = useState<number>(300);
+  const [weightGramsInput, setWeightGramsInput] = useState<string>("100");
+  const weightGrams = parseInt(weightGramsInput, 10) || 0;
   const [notes, setNotes] = useState<string>("");
   const [ketoRatio, setKetoRatio] = useState<KetoRatio>(KetoRatio.Medium);
   const [isCarbZero, setIsCarbZero] = useState<boolean>(true);
 
   // Nutritional values derived or entered
-  const [calories, setCalories] = useState<number>(873);
-  const [proteinGrams, setProteinGrams] = useState<number>(72);
-  const [fatGrams, setFatGrams] = useState<number>(66);
+  const [calories, setCalories] = useState<number>(291);
+  const [proteinGrams, setProteinGrams] = useState<number>(24);
+  const [fatGrams, setFatGrams] = useState<number>(22);
 
   // Search states
   const [usdaSearchQuery, setUsdaSearchQuery] = useState<string>("");
@@ -72,16 +73,16 @@ export default function LiveMeals({ profileId, onLoggedSuccess, onSuccessNotific
         const data = await response.json();
         setUsdaSuggestions(data.foods || []);
         if (data.usingFallback) {
-          setUsdaSearchWarning(data.warning || "USDA search unavailable. Showing local carnivore database.");
+          setUsdaSearchWarning(data.warning || "USDA search unavailable");
         } else {
           setUsdaSearchWarning(null);
         }
       } else {
-        setUsdaSearchWarning("USDA search unavailable. Showing local carnivore database.");
+        setUsdaSearchWarning("USDA search unavailable");
       }
     } catch (err) {
       console.error("USDA live search fails:", err);
-      setUsdaSearchWarning("USDA search unavailable. Showing local carnivore database.");
+      setUsdaSearchWarning("USDA search unavailable");
     } finally {
       setUsdaLoading(false);
     }
@@ -123,6 +124,12 @@ export default function LiveMeals({ profileId, onLoggedSuccess, onSuccessNotific
   const handleSaveMeal = async (e: React.FormEvent) => {
     e.preventDefault();
     if (isSubmitting) return;
+
+    if (weightGrams <= 0) {
+      alert("Please enter a valid portion size greater than 0 grams.");
+      return;
+    }
+
     const finalItemName = foodNameInput.trim() || `${weightGrams}g ${cutType}`;
 
     setIsSubmitting(true);
@@ -156,7 +163,7 @@ export default function LiveMeals({ profileId, onLoggedSuccess, onSuccessNotific
       // Reset some states
       setFoodNameInput("");
       setNotes("");
-      setWeightGrams(300);
+      setWeightGramsInput("100");
     } catch (err: any) {
       alert("Error logging meal resources: " + err.message);
     } finally {
@@ -215,7 +222,6 @@ export default function LiveMeals({ profileId, onLoggedSuccess, onSuccessNotific
 
           {usdaSearchWarning && (
             <div className="bg-red-950/40 border border-red-500/20 text-red-400 text-[11px] font-mono p-3 rounded-xl flex items-start gap-2 mt-1 sm:items-center" id="usda-warning-indicator">
-              <div className="text-amber-500 shrink-0 font-bold">⚠️ Notice:</div>
               <div className="leading-tight">{usdaSearchWarning}</div>
             </div>
           )}
@@ -275,12 +281,21 @@ export default function LiveMeals({ profileId, onLoggedSuccess, onSuccessNotific
               </label>
               <div className="relative">
                 <input
-                  type="number"
-                  min="1"
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
                   required
-                  value={weightGrams}
-                  onChange={(e) => setWeightGrams(parseInt(e.target.value) || 0)}
-                  className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none"
+                  value={weightGramsInput}
+                  onChange={(e) => {
+                    const cleanVal = e.target.value.replace(/[^0-9]/g, "");
+                    if (cleanVal === "") {
+                      setWeightGramsInput("");
+                    } else {
+                      // Parse as int to strip any leading zeros, then stringify
+                      setWeightGramsInput(parseInt(cleanVal, 10).toString());
+                    }
+                  }}
+                  className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-amber-500"
                 />
                 <Scale className="absolute right-3.5 top-2 w-4 h-4 text-slate-500" />
               </div>
@@ -424,7 +439,6 @@ export default function LiveMeals({ profileId, onLoggedSuccess, onSuccessNotific
 
                   <div className="flex gap-2 text-[10px] text-slate-400 font-mono">
                     <span className="bg-slate-950 px-2 py-0.5 rounded block">⚖️ {m.weightGrams}g</span>
-                    <span className="bg-slate-950 px-2 py-0.5 rounded block">⚡ {m.ketoRatio} Ratio</span>
                   </div>
 
                   {m.notes && (

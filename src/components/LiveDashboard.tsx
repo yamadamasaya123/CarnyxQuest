@@ -342,8 +342,6 @@ export default function LiveDashboard({
                   </div>
                   <div className="flex gap-2 text-[10px] text-slate-500 font-mono">
                     <span>{m.weightGrams}g</span>
-                    <span>•</span>
-                    <span>{m.ketoRatio} ratio</span>
                   </div>
                 </div>
               ))}
