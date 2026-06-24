@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { db, getRequiredXpForLevel } from "../lib/db";
 import { UserProfile, Streak, DailyCheckIn, XpTransaction, PrimalClass, ShieldLog } from "../types";
+import { useLanguage } from "../lib/LanguageContext";
 import {
   Flame,
   Shield,
@@ -32,11 +33,11 @@ export default function LiveDashboard({
   onSuccessNotification,
   onCheckInSuccess,
 }: LiveDashboardProps) {
+  const { t, language } = useLanguage();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [streak, setStreak] = useState<Streak | null>(null);
   const [checkins, setCheckins] = useState<DailyCheckIn[]>([]);
   const [transactions, setTransactions] = useState<XpTransaction[]>([]);
-  const [meals, setMeals] = useState<any[]>([]);
   const [shieldLogs, setShieldLogs] = useState<ShieldLog[]>([]);
 
   // Check-in input notes
@@ -55,8 +56,6 @@ export default function LiveDashboard({
       setCheckins(ci);
       const tx = await db.getTransactions(profileId);
       setTransactions(tx);
-      const ml = await db.getMeals(profileId);
-      setMeals(ml.slice(0, 3)); // show top 3 latest
       const logs = await db.getShieldLogs(profileId);
       setShieldLogs(logs);
     }
@@ -87,7 +86,7 @@ export default function LiveDashboard({
   if (!profile || !streak) {
     return (
       <div className="py-20 text-center text-slate-400">
-        Prone position detected. Establishing profile connection...
+        {t("establishingProfile")}
       </div>
     );
   }
@@ -106,13 +105,21 @@ export default function LiveDashboard({
     try {
       const res = await db.buyShield(profileId);
       if (res.success) {
-        onSuccessNotification("Purchased 1 Marrow Protector Shield! Your streak is insulated from breaks.");
+        onSuccessNotification(
+          language === "id"
+            ? "Membeli 1 Perisai Pelindung Sumsum! Beruntun Anda aman dari kepunahan."
+            : "Purchased 1 Marrow Protector Shield! Your streak is insulated from breaks."
+        );
         await loadData();
       } else {
-        alert(res.error || "Failed to finalize golden bargain.");
+        alert(
+          res.error
+            ? (language === "id" ? "Poin Emas tidak mencukupi untuk membeli perisai." : res.error)
+            : (language === "id" ? "Gagal menyelesaikan tawar-menawar emas." : "Failed to finalize golden bargain.")
+        );
       }
     } catch (err: any) {
-      alert("Store transaction faulted: " + err.message);
+      alert((language === "id" ? "Transaksi toko bermasalah: " : "Store transaction faulted: ") + err.message);
     } finally {
       setShopLoading(false);
     }
@@ -126,14 +133,26 @@ export default function LiveDashboard({
     try {
       const res = await db.completeDailyCheckIn(profileId, checkInNotes);
       if (res.error) {
-        alert(res.error);
+        alert(
+          language === "id"
+            ? "Pemeriksaan harian sudah selesai hari ini!"
+            : res.error
+        );
       } else {
         onCheckInSuccess(res.xpEarned, res.leveledUp);
         
         if (res.shieldActivated) {
-          onSuccessNotification("Marrow Shield activated. Daily streak preserved.");
+          onSuccessNotification(
+            language === "id"
+              ? "Perisai Sumsum diaktifkan. Beruntun harian diamankan."
+              : "Marrow Shield activated. Daily streak preserved."
+          );
         } else {
-          onSuccessNotification("Daily check-in ritual completed successfully! Current streak incremented.");
+          onSuccessNotification(
+            language === "id"
+              ? "Ritual pemeriksaan harian berhasil diselesaikan! Beruntun bertambah."
+              : "Daily check-in ritual completed successfully! Current streak incremented."
+          );
         }
 
         setCheckInNotes("");
@@ -179,11 +198,11 @@ export default function LiveDashboard({
                     {profile.displayName}
                   </h3>
                   <span className="bg-amber-500/10 text-amber-400 border border-amber-500/20 text-[9.5px] font-mono font-bold px-1.5 py-0.5 rounded">
-                    CLASS: {profile.primalClass.toUpperCase()}
+                    {language === "id" ? "KELAS: " : "CLASS: "}{profile.primalClass.toUpperCase()}
                   </span>
                 </div>
                 <p className="text-xs text-slate-400">
-                  Vanguard of the meat-communion cohort. Tracking biomarkers live.
+                  {t("vanguardText")}
                 </p>
               </div>
             </div>
@@ -198,7 +217,7 @@ export default function LiveDashboard({
               >
                 <Coins className="w-4 h-4 text-amber-500 animate-pulse" />
                 <div>
-                  <span className="text-[10px] text-slate-500 font-mono block leading-none uppercase tracking-wide">Invent Gold</span>
+                  <span className="text-[10px] text-slate-500 font-mono block leading-none uppercase tracking-wide">{t("inventGold")}</span>
                   <span className="text-sm font-black font-mono text-amber-300 leading-none block mt-1 flex items-center gap-1">
                     {profile.goldPoints} GP <span className="text-[9px] text-slate-500 font-normal opacity-70">(Info)</span>
                   </span>
@@ -213,7 +232,7 @@ export default function LiveDashboard({
                 title="Purchase Marrow Shield protection for 80 Golden Points"
               >
                 <ShoppingBag className="w-3.5 h-3.5 text-amber-500" />
-                <span>Shield (80 GP)</span>
+                <span>{t("shieldGp")}</span>
               </button>
             </div>
           </div>
@@ -222,7 +241,7 @@ export default function LiveDashboard({
           <div className="mt-8 space-y-2">
             <div className="flex justify-between items-center text-xs font-mono">
               <span className="text-slate-400 block font-bold">
-                Level {profile.level} Pathfinder
+                {t("levelPathfinder", { level: profile.level })}
               </span>
               <span className="text-slate-500 block">
                 {profile.experience} / {reqXp} XP ({xpPercent}%)
@@ -243,35 +262,44 @@ export default function LiveDashboard({
           <div className="flex items-center justify-between border-b border-slate-900 pb-3 mb-4">
             <h4 className="text-xs font-bold font-mono tracking-widest text-slate-400 uppercase flex items-center gap-2">
               <CalendarCheck className="w-4 h-4 text-amber-500" />
-              Sacred Daily Check-In Ritual
+              {t("sacredCheckinRitual")}
             </h4>
 
             {isCheckedInToday && (
               <span className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[9.5px] font-mono font-bold px-2 py-0.5 rounded flex items-center gap-1">
                 <CircleCheck className="w-3 h-3" />
-                <span>COMPLETED</span>
+                <span>{t("checkedInToday")}</span>
               </span>
             )}
           </div>
 
           {isCheckedInToday ? (
             <div className="p-4 bg-emerald-950/10 border border-emerald-500/10 rounded-xl space-y-2 text-xs">
-              <p className="text-slate-300 font-semibold">Communion Secured for Yawning Twilight!</p>
+              <p className="text-slate-300 font-semibold">
+                {language === "id" ? "Komuni Telah Dipastikan untuk “Yawning Twilight”!" : "Communion Secured for Yawning Twilight!"}
+              </p>
               <p className="text-slate-400 text-[11px] leading-relaxed">
-                Your biological data, streak preservation parameters, and macronutrient targets have been coordinated. Continue logging meats or activate the autophagy timer to maximize pathfinder gains.
+                {language === "id"
+                  ? "Data biologis Anda, parameter pelestarian kultur, dan target makronutrien telah disinkronkan. Lanjutkan mencatat konsumsi daging atau aktifkan pengatur waktu autofagi untuk memaksimalkan keuntungan dari program Pathfinder."
+                  : "Your biological data, streak preservation parameters, and macronutrient targets have been coordinated. Continue logging meats or activate the autophagy timer to maximize pathfinder gains."}
               </p>
             </div>
           ) : (
             <form onSubmit={handleCheckInSubmit} className="space-y-4">
               <p className="text-[11px] text-slate-500">
-                Seal your day's biometric consistency to secure checking points and insulate your streaks. Entering notes awards custom Path progression.
+                {language === "id"
+                  ? "Segel konsistensi biometrik harian Anda untuk mengamankan titik pemeriksaan harian dan melindungi rekor beruntun Anda. Memasukkan catatan memberikan perkembangan Jalur khusus."
+                  : "Seal your day's biometric consistency to secure checking points and insulate your streaks. Entering notes awards custom Path progression."}
               </p>
-              <div>
+              <div className="space-y-1.5">
+                <span className="text-[10px] text-amber-500/80 font-bold block font-mono">
+                  {t("notesOptional")}
+                </span>
                 <input
                   type="text"
                   value={checkInNotes}
                   onChange={(e) => setCheckInNotes(e.target.value)}
-                  placeholder="e.g. Broken OMAD with Ribeye, mental clarity incredibly high today."
+                  placeholder={t("checkinNotesPlaceholder")}
                   className="w-full bg-slate-900 border border-slate-850 rounded-xl px-3 py-2.5 text-xs text-slate-200 placeholder:text-slate-650 focus:outline-none focus:border-amber-500 focus:ring-0"
                 />
               </div>
@@ -283,12 +311,12 @@ export default function LiveDashboard({
                 {checkInLoading ? (
                   <>
                     <Loader2 className="w-3.5 h-3.5 animate-spin text-white" />
-                    <span>TRANSMITTING TRIBAL RECORD...</span>
+                    <span>{language === "id" ? "MENGIRIMKAN CATATAN SUKU..." : "TRANSMITTING TRIBAL RECORD..."}</span>
                   </>
                 ) : (
                   <>
                     <Zap className="w-3.5 h-3.5 text-amber-100" />
-                    <span>Complete Check-In (+10 XP)</span>
+                    <span>{language === "id" ? "Selesaikan Pemeriksaan Harian (+10 XP)" : "Complete Check-In (+10 XP)"}</span>
                   </>
                 )}
               </button>
@@ -302,52 +330,19 @@ export default function LiveDashboard({
             <div className="absolute top-0 left-0 w-32 h-32 bg-amber-500/2.5 blur-3xl pointer-events-none"></div>
             <h4 className="text-[11px] font-extrabold font-mono tracking-widest text-slate-400 uppercase flex items-center gap-1.5">
               <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-              Latest Hunter Note
+              {language === "id" ? "Catatan Pemburu Terbaru" : "Latest Hunter Note"}
             </h4>
             <div className="p-3.5 bg-slate-900/50 rounded-xl border border-slate-850/60">
               <p className="text-slate-305 text-xs italic leading-relaxed">
                 "{latestCheckInWithNote.notes}"
               </p>
               <div className="mt-2 flex justify-between items-center text-[9px] text-slate-500 font-mono">
-                <span>Date: {latestCheckInWithNote.checkInDate}</span>
-                <span>Ritual Secured</span>
+                <span>{language === "id" ? "Tanggal: " : "Date: "}{latestCheckInWithNote.checkInDate}</span>
+                <span>{language === "id" ? "Ritual Aman" : "Ritual Secured"}</span>
               </div>
             </div>
           </div>
         )}
-
-        {/* LATEST MEAL JOURNAL INSIGHTS */}
-        <div className="bg-slate-950 p-5 rounded-2xl border border-slate-900 space-y-4">
-          <div className="flex justify-between items-center border-b border-slate-900 pb-2.5">
-            <h4 className="text-[11px] font-extrabold font-mono tracking-widest text-slate-400 uppercase">
-              Patriarchal Pantry (Latest 3 Meals Logged)
-            </h4>
-          </div>
-
-          {meals.length === 0 ? (
-            <div className="py-6 text-center text-xs text-slate-600 font-mono italic">
-              Your journal is void of registered meats. Log dinners in the Meat Log console.
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-              {meals.map((m) => (
-                <div key={m.id} className="p-3 bg-slate-900/50 border border-slate-850 rounded-xl space-y-2">
-                  <div className="flex justify-between items-center gap-2">
-                    <span className="font-bold text-xs text-amber-200 truncate pr-2">{m.cutType}</span>
-                    {m.isCarbZero && (
-                      <span className="inline-flex items-center justify-center text-center bg-amber-500/10 text-amber-400 border border-amber-500/20 text-[8px] font-mono font-bold px-1.5 py-0.5 rounded whitespace-nowrap shrink-0">
-                        ZERO CARBS
-                      </span>
-                    )}
-                  </div>
-                  <div className="flex gap-2 text-[10px] text-slate-500 font-mono">
-                    <span>{m.weightGrams}g</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
       </div>
 
       {/* RIGHT HAND SIDEBAR: STREAKS, PROTECTION, TRANSACTION RECORDS */}
@@ -356,7 +351,7 @@ export default function LiveDashboard({
         {/* BIOMETRIC STREAK PANEL */}
         <div className="bg-slate-950 p-5 rounded-2xl border border-amber-900/20 relative space-y-4">
           <h4 className="text-[11px] font-bold font-mono tracking-widest text-slate-400 uppercase border-b border-slate-900 pb-2.5">
-            Primal Streak Telemetry
+            {language === "id" ? "Telemetri Beruntun Primal" : "Primal Streak Telemetry"}
           </h4>
 
           <div className="grid grid-cols-2 gap-3 text-center">
@@ -366,7 +361,7 @@ export default function LiveDashboard({
                 <span>{streak.currentStreak}</span>
               </div>
               <span className="text-[9px] uppercase tracking-wider text-slate-500 font-mono font-bold block mt-1">
-                Active Streak
+                {t("currentStreak")}
               </span>
             </div>
 
@@ -375,7 +370,7 @@ export default function LiveDashboard({
                 {streak.longestStreak}
               </div>
               <span className="text-[9px] uppercase tracking-wider text-slate-500 font-mono font-bold block mt-1">
-                Longest Streak
+                {t("longestStreak")}
               </span>
             </div>
           </div>
@@ -385,17 +380,17 @@ export default function LiveDashboard({
             <div className="flex items-center justify-between text-xs font-mono">
               <span className="text-slate-400 flex items-center gap-1.5 leading-none">
                 <Shield className="w-4 h-4 text-amber-500" />
-                Marrow Shield Protectors:
+                {language === "id" ? "Pelindung Perisai Sumsum:" : "Marrow Shield Protectors:"}
               </span>
               <span className="text-amber-400 font-black">
-                {streak.marrowShieldsActive} Active
+                {streak.marrowShieldsActive} {language === "id" ? "Aktif" : "Active"}
               </span>
             </div>
 
             {/* Shield Progress Bar */}
             <div className="space-y-1">
               <div className="flex justify-between items-center text-[10px] font-mono">
-                <span className="text-slate-500">Shield Progress:</span>
+                <span className="text-slate-500">{language === "id" ? "Kemajuan Perisai:" : "Shield Progress:"}</span>
                 <span className="text-amber-500 font-bold">{streak.shieldProgressPercent ?? 0}%</span>
               </div>
               <div className="w-full bg-slate-950 rounded-full h-1.5 overflow-hidden">
@@ -408,7 +403,7 @@ export default function LiveDashboard({
 
             {/* Description explaining shields */}
             <p className="text-[10px] text-slate-500 font-sans leading-relaxed">
-              Marrow shields protect your streak from carb slippage and missed daily check-ins.
+              {t("marrowShieldsDescription")}
             </p>
           </div>
         </div>
@@ -417,19 +412,19 @@ export default function LiveDashboard({
         <div className="bg-slate-950 p-5 rounded-2xl border border-slate-900 space-y-3.5">
           <h4 className="text-[11px] font-bold font-mono tracking-widest text-slate-400 uppercase border-b border-slate-900 pb-2 flex items-center gap-1.5">
             <Shield className="w-4 h-4 text-amber-500 animate-pulse" />
-            Recent Shield Activity
+            {language === "id" ? "Aktivitas Perisai Terbaru" : "Recent Shield Activity"}
           </h4>
 
           {shieldLogs.length === 0 ? (
             <p className="text-[10px] text-slate-600 font-mono italic text-center py-6">
-              No shield activity recorded yet. Complete challenges or purchase protectors.
+              {language === "id" ? "Belum ada aktivitas perisai yang tercatat. Selesaikan tantangan atau beli pelindung." : "No shield activity recorded yet. Complete challenges or purchase protectors."}
             </p>
           ) : (
             <div className="space-y-2.5 max-h-56 overflow-y-auto pr-1">
               {shieldLogs.slice(0, 5).map((log) => (
                 <div key={log.id} className="text-[11px] flex flex-col sm:flex-row sm:items-center justify-between gap-1 border-b border-slate-900/45 pb-1.5 last:border-0 last:pb-0 font-mono">
                   <span className={`font-bold break-words leading-tight ${log.shieldChange > 0 ? "text-emerald-500" : "text-rose-500"}`}>
-                    {log.shieldChange > 0 ? `+${log.shieldChange}` : log.shieldChange} Shield — {log.reason}
+                    {log.shieldChange > 0 ? `+${log.shieldChange}` : log.shieldChange} {language === "id" ? "Perisai — " : "Shield — "}{log.reason === "carb_slippage_auto_shield_usage" ? (language === "id" ? "Selip Karbohidrat" : "Carb Slippage") : log.reason === "checkin_auto_shield_usage" ? (language === "id" ? "Pemeriksaan Absen" : "Missed Checkin") : log.reason === "challenge_reward" ? (language === "id" ? "Hadiah Tantangan" : "Challenge Reward") : log.reason === "manual_purchase" ? (language === "id" ? "Pembelian Toko" : "Store Purchase") : log.reason}
                   </span>
                   <span className="text-[9px] text-slate-600 sm:shrink-0">
                     {new Date(log.createdAt).toLocaleDateString([], { month: "short", day: "numeric" })}
@@ -444,19 +439,29 @@ export default function LiveDashboard({
         <div className="bg-slate-950 p-5 rounded-2xl border border-slate-900 space-y-3.5">
           <h4 className="text-[11px] font-bold font-mono tracking-widest text-slate-400 uppercase border-b border-slate-900 pb-2 flex items-center gap-1.5">
             <Award className="w-4 h-4 text-amber-500" />
-            Pathfinder Chronicles (XP Log)
+            {language === "id" ? "Kronik Penjelajah (Log XP)" : "Pathfinder Chronicles (XP Log)"}
           </h4>
 
           {transactions.length === 0 ? (
             <p className="text-[10px] text-slate-600 font-mono italic text-center py-6">
-              Pathfinder index empty. Ignite checking or fasting registers.
+              {language === "id" ? "Indeks penjelajah kosong. Mulai lakukan pemeriksaan atau puasa." : "Pathfinder index empty. Ignite checking or fasting registers."}
             </p>
           ) : (
             <div className="space-y-2.5 max-h-56 overflow-y-auto pr-1">
               {transactions.slice(0, 5).map((t) => (
                 <div key={t.id} className="text-[11px] flex justify-between items-start gap-2 font-mono">
                   <div className="space-y-0.5">
-                    <span className="text-slate-300 block">{t.source}</span>
+                    <span className="text-slate-300 block">
+                      {t.source === "daily_checkin" 
+                        ? (language === "id" ? "Pemeriksaan Harian" : "Daily Check-In") 
+                        : t.source === "challenge_completed" 
+                        ? (language === "id" ? "Tantangan Selesai" : "Challenge Completed") 
+                        : t.source === "fast_completed" 
+                        ? (language === "id" ? "Puasa Selesai" : "Fast Completed") 
+                        : t.source === "workout_logged"
+                        ? (language === "id" ? "Latihan Dicatat" : "Workout Logged")
+                        : t.source}
+                    </span>
                     <span className="text-[9px] text-slate-500 block">
                       {new Date(t.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                     </span>

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { db, CHALLENGE_ID_MAP, CHALLENGE_ID_MAP_REV } from "../lib/db";
+import { useLanguage } from "../lib/LanguageContext";
 import { Trophy, Compass, CheckCircle2, Flame, Shield, Target, Lock, Crown, Info } from "lucide-react";
 
 interface LiveChallengesProps {
@@ -9,6 +10,81 @@ interface LiveChallengesProps {
 }
 
 export default function LiveChallenges({ profileId, userLevel = 1, onEnrollSuccess }: LiveChallengesProps) {
+  const { t, language } = useLanguage();
+
+  const translateChallengeTitle = (title: string): string => {
+    if (language !== "id") return title;
+    switch (title) {
+      case "The Mammoth Raid": return "Serbuan Mammoth";
+      case "Deep Autophagy Quest": return "Misi Autofagi Mendalam";
+      case "Ancestral Consistency": return "Konsistensi Leluhur";
+      case "Fasting Vanguard": return "Pelopor Puasa";
+      case "Advanced Raid I": return "Serbuan Lanjutan I";
+      case "Iron Hunt": return "Perburuan Besi";
+      case "Primal Momentum": return "Momentum Primal";
+      case "Forge Five Workouts": return "Tempa Lima Latihan";
+      default: return title;
+    }
+  };
+
+  const translateChallengeDescription = (desc: string): string => {
+    if (language !== "id") return desc;
+    switch (desc) {
+      case "Successfully log your meals for 5 unique days to lock down the primal herd's meat stores.":
+        return "Berhasil catat makanan Anda selama 5 hari berbeda untuk mengamankan persediaan daging kawanan primal.";
+      case "Complete a full 18-hour (or longer) fasting session to unlock standard cellular recycling.":
+        return "Selesaikan sesi puasa penuh selama 18 jam (atau lebih lama) untuk membuka daur ulang seluler standar.";
+      case "Maintain a 3-day daily review check-in streak to coordinate the tribal defensive lines.":
+        return "Pertahankan streak check-in harian selama 3 hari berturut-turut untuk mengoordinasikan barisan pertahanan suku.";
+      case "Complete 1 full fasting session after reaching level 2.":
+        return "Selesaikan 1 sesi puasa penuh setelah mencapai level 2.";
+      case "Complete 3 consecutive carnivore days after reaching level 2.":
+        return "Selesaikan 3 hari carnivore berturut-turut setelah mencapai level 2.";
+      case "Log 5 zero-carb meals after reaching level 2.":
+        return "Catat 5 makanan tanpa karbohidrat setelah mencapai level 2.";
+      case "Complete daily check-ins for 4 days after reaching level 2.":
+        return "Selesaikan check-in harian selama 4 hari setelah mencapai level 2.";
+      case "Complete 5 workouts after reaching level 2.":
+        return "Selesaikan 5 sesi latihan setelah mencapai level 2.";
+      default: return desc;
+    }
+  };
+
+  const translateBadgeName = (name: string): string => {
+    if (language !== "id") return name;
+    switch (name) {
+      case "First Hunt Tribute": return "Penghormatan Berburu Pertama";
+      case "Primal Check-In": return "Check-In Primal";
+      case "Marrow Defender III": return "Pelindung Sumsum III";
+      case "Carnivore Consistency": return "Konsistensi Karnivora";
+      case "Autophagy Initiate": return "Inisiasi Autofagi";
+      case "Apex Predator": return "Predator Puncak";
+      case "Commence Your First Workout": return "Mulai Latihan Pertama Anda";
+      default: return name;
+    }
+  };
+
+  const translateBadgeDescription = (desc: string): string => {
+    if (language !== "id") return desc;
+    switch (desc) {
+      case "Log your very first 100% pure carb-zero meal log.":
+        return "Catat log makanan 100% murni bebas karbohidrat yang pertama.";
+      case "Log your very first daily primal check-in.":
+        return "Catat check-in primal harian pertama Anda.";
+      case "Reach a consecutive 3-day primal eating check-in streak.":
+        return "Mencapai 3 hari berturut-turut streak check-in makan primal.";
+      case "Reach a consecutive 7-day primal eating check-in streak.":
+        return "Mencapai 7 hari berturut-turut streak check-in makan primal.";
+      case "Complete a scheduled metabolic custom fasting protocol.":
+        return "Selesaikan protokol puasa kustom metabolik yang dijadwalkan.";
+      case "Reach level 5 through pure dietary and metabolic discipline.":
+        return "Mencapai level 5 melalui disiplin diet dan metabolik yang murni.";
+      case "Successfully log your first active routine on the carnyx quest.":
+        return "Berhasil mencatat rutinitas aktif pertama Anda di CarnyxQuest.";
+      default: return desc;
+    }
+  };
+
   const [enrollments, setEnrollments] = useState<any[]>([]);
   const [dbChallenges, setDbChallenges] = useState<any[]>([]);
   const [badges, setBadges] = useState<any[]>([]);
@@ -134,16 +210,16 @@ export default function LiveChallenges({ profileId, userLevel = 1, onEnrollSucce
         <div className="flex items-center gap-2 border-b border-slate-900 pb-3">
           <Target className="w-5 h-5 text-amber-500 animate-pulse" />
           <h3 className="text-sm font-bold uppercase tracking-wider font-mono text-amber-400">
-            Active Tribal Expeditions (Challenges)
+            {language === "id" ? "Ekspedisi Suku Aktif (Tantangan)" : "Active Tribal Expeditions (Challenges)"}
           </h3>
         </div>
 
         {mappedUserChallenges.length === 0 ? (
-          <div className="text-center py-10 text-xs text-slate-500 bg-slate-900/10 border border-slate-900/40 rounded-xl p-4">
+          <div className="text-center py-10 text-xs text-slate-500 bg-slate-900/10 border border-slate-900/40 rounded-xl p-4 font-mono">
             {userLevel < 2 ? (
-              "No active quests. Reach level 2 to unlock advanced raids."
+              (language === "id" ? "Tidak ada misi aktif. Capai level 2 untuk membuka penyerangan tingkat lanjut." : "No active quests. Reach level 2 to unlock advanced raids.")
             ) : (
-              "Choose an available quest to begin your expedition."
+              (language === "id" ? "Pilih misi yang tersedia untuk memulai ekspedisi Anda." : "Choose an available quest to begin your expedition.")
             )}
           </div>
         ) : (
@@ -164,8 +240,8 @@ export default function LiveChallenges({ profileId, userLevel = 1, onEnrollSucce
                 >
                   <div className="flex justify-between items-start gap-3">
                     <div className="space-y-1 text-left">
-                      <span className="font-extrabold text-sm block tracking-wide">{challenge.title}</span>
-                      <p className="text-xs text-slate-400 leading-relaxed">{challenge.description}</p>
+                      <span className="font-extrabold text-sm block tracking-wide">{translateChallengeTitle(challenge.title)}</span>
+                      <p className="text-xs text-slate-400 leading-relaxed">{translateChallengeDescription(challenge.description)}</p>
                     </div>
 
                     <span className={`text-[9px] uppercase tracking-wider font-mono font-bold px-2 py-0.5 rounded border shrink-0 ${
@@ -173,15 +249,17 @@ export default function LiveChallenges({ profileId, userLevel = 1, onEnrollSucce
                         ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
                         : "bg-amber-500/10 text-amber-400 border-amber-500/20 animate-pulse"
                     }`}>
-                      {isCompleted ? "CLAIMED" : "ACTIVE QUEST"}
+                      {isCompleted
+                        ? (language === "id" ? "DIKLAIM" : "CLAIMED")
+                        : (language === "id" ? "MISI AKTIF" : "ACTIVE QUEST")}
                     </span>
                   </div>
 
                   <div className="space-y-1.5 pt-1 text-left">
                     <div className="flex justify-between text-[10px] text-slate-500 font-mono">
-                      <span>Expedition Progress</span>
+                      <span>{language === "id" ? "Kemajuan Ekspedisi" : "Expedition Progress"}</span>
                       <span>
-                        {userEnrollment.progress} / {targetVal} {challenge.unitLabel || "Days / Action"}
+                        {userEnrollment.progress} / {targetVal} {language === "id" ? (challenge.unitLabel === "Days" ? "Hari" : "Hari / Tindakan") : (challenge.unitLabel || "Days / Action")}
                       </span>
                     </div>
                     {/* Tiny Progress bar */}
@@ -198,17 +276,19 @@ export default function LiveChallenges({ profileId, userLevel = 1, onEnrollSucce
                   <div className="flex justify-between items-center pt-2 text-[10px] font-mono">
                     <div className="flex gap-2">
                       <span className="bg-amber-500/10 text-amber-500 px-2 py-0.5 rounded font-bold">
-                        💎 +{challenge.rewardXp} XP (Unlocks at level {getMinLevel({ id: userEnrollment.challengeId, title: challenge.title })})
+                        {language === "id"
+                          ? `💎 +${challenge.rewardXp} XP (Terbuka di level ${getMinLevel({ id: userEnrollment.challengeId, title: challenge.title })})`
+                          : `💎 +${challenge.rewardXp} XP (Unlocks at level ${getMinLevel({ id: userEnrollment.challengeId, title: challenge.title })})`}
                       </span>
                       <span className="bg-slate-950 px-2 py-0.5 rounded text-slate-400">
-                        🛡️ {challenge.shieldRewardPercent ?? 25}% shielding
+                        🛡️ {challenge.shieldRewardPercent ?? 25}% {language === "id" ? "perlindungan" : "shielding"}
                       </span>
                     </div>
 
                     {isCompleted && (
                       <span className="text-emerald-400 flex items-center gap-1 font-bold">
                         <CheckCircle2 className="w-3.5 h-3.5" />
-                        Bonus Paid out
+                        {language === "id" ? "Bonus Dibayarkan" : "Bonus Paid out"}
                       </span>
                     )}
                   </div>
@@ -222,7 +302,7 @@ export default function LiveChallenges({ profileId, userLevel = 1, onEnrollSucce
         <div className="flex items-center gap-2 border-b border-slate-900 pb-3 pt-4">
           <Compass className="w-5 h-5 text-amber-500 animate-spin" style={{ animationDuration: "15s" }} />
           <h3 className="text-sm font-bold uppercase tracking-wider font-mono text-amber-400">
-            Available Wilderness Expeditions
+            {language === "id" ? "Ekspedisi Liar yang Tersedia" : "Available Wilderness Expeditions"}
           </h3>
         </div>
 
@@ -231,9 +311,13 @@ export default function LiveChallenges({ profileId, userLevel = 1, onEnrollSucce
             <div className="mx-auto w-10 h-10 rounded-full bg-slate-950 flex items-center justify-center border border-slate-850 text-slate-500 mb-2.5">
               <Lock className="w-4 h-4" />
             </div>
-            <h4 className="text-xs font-black uppercase text-slate-300 tracking-wider font-mono">Advanced Expeditions Locked</h4>
+            <h4 className="text-xs font-black uppercase text-slate-300 tracking-wider font-mono">
+              {language === "id" ? "Ekspedisi Tingkat Lanjut Terkunci" : "Advanced Expeditions Locked"}
+            </h4>
             <p className="text-[11px] text-slate-500 mt-1 max-w-sm mx-auto leading-relaxed">
-              Reach <span className="text-amber-450 font-bold">Level 2</span> to automatically unlock the advanced Deep Autophagy Quest and consistency expeditions!
+              {language === "id"
+                ? "Capai Level 2 untuk membuka Misi Autofagi Mendalam tingkat lanjut dan ekspedisi konsistensi secara otomatis!"
+                : "Reach Level 2 to automatically unlock the advanced Deep Autophagy Quest and consistency expeditions!"}
             </p>
           </div>
         )}
@@ -261,11 +345,11 @@ export default function LiveChallenges({ profileId, userLevel = 1, onEnrollSucce
                 <div className="absolute top-3.5 right-3.5 flex items-center gap-1.5 font-mono text-[9px] font-bold">
                   {isLocked ? (
                     <span className="bg-slate-950 text-slate-500 px-2 py-0.5 rounded border border-slate-850 flex items-center gap-1">
-                      <Lock className="w-2.5 h-2.5" /> Required Lvl {minLevel}
+                      <Lock className="w-2.5 h-2.5" /> {language === "id" ? `Butuh Lvl ${minLevel}` : `Required Lvl ${minLevel}`}
                     </span>
                   ) : (
                     <span className="bg-amber-400 text-slate-950 px-2 py-0.5 rounded font-black uppercase tracking-wider">
-                      Lvl {minLevel} Quest
+                      {language === "id" ? `Misi Lvl ${minLevel}` : `Lvl ${minLevel} Quest`}
                     </span>
                   )}
                 </div>
@@ -273,18 +357,18 @@ export default function LiveChallenges({ profileId, userLevel = 1, onEnrollSucce
                 <div className="space-y-3">
                   <div className="space-y-1 pr-24 text-left">
                     <h4 className="text-xs font-extrabold tracking-wide text-amber-200 uppercase font-sans">
-                      {ch.title}
+                      {translateChallengeTitle(ch.title)}
                     </h4>
-                    <p className="text-[11px] text-slate-400 leading-relaxed">{ch.description}</p>
+                    <p className="text-[11px] text-slate-400 leading-relaxed">{translateChallengeDescription(ch.description)}</p>
                   </div>
 
                   <div className="flex flex-wrap justify-between items-center gap-2 pt-2 border-t border-slate-900/60">
                     <div className="flex gap-2 text-[10px] font-mono text-slate-400">
-                      <span>⌛ duration: <span className="text-slate-200 font-bold">{ch.durationDays} days</span></span>
+                      <span>{language === "id" ? "⌛ durasi: " : "⌛ duration: "}<span className="text-slate-200 font-bold">{language === "id" ? `${ch.durationDays} hari` : `${ch.durationDays} days`}</span></span>
                       <span>•</span>
                       <span className="text-amber-400 font-bold">💎 +{ch.rewardXp} XP</span>
                       <span>•</span>
-                      <span className="text-amber-500 font-bold flex items-center gap-1">🛡️ +{ch.shieldRewardPercent ?? 25}% Shield</span>
+                      <span className="text-amber-500 font-bold flex items-center gap-1">🛡️ +{ch.shieldRewardPercent ?? 25}% {language === "id" ? "Pelindung" : "Shield"}</span>
                     </div>
 
                     {!isLocked && (
@@ -293,7 +377,9 @@ export default function LiveChallenges({ profileId, userLevel = 1, onEnrollSucce
                         disabled={isEmbarking}
                         className="py-1 px-3 text-[10px] font-bold tracking-wider uppercase font-mono rounded bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 hover:from-amber-400 hover:to-orange-400 active:scale-95 duration-100 disabled:opacity-50"
                       >
-                        {isEmbarking ? "Embarking..." : "Embark"}
+                        {isEmbarking
+                          ? (language === "id" ? "Memulai..." : "Embarking...")
+                          : (language === "id" ? "Mulai" : "Embark")}
                       </button>
                     )}
                   </div>
@@ -303,8 +389,10 @@ export default function LiveChallenges({ profileId, userLevel = 1, onEnrollSucce
           })}
 
           {userLevel >= 2 && unenrolledDbChallenges.filter(ch => getMinLevel(ch) <= userLevel).length === 0 && (
-            <div className="text-center py-4 text-xs text-slate-500 italic">
-              ⚔️ All discovered campaigns for your level have been active or completed.
+            <div className="text-center py-4 text-xs text-slate-500 italic font-mono">
+              {language === "id"
+                ? "⚔️ Semua kampanye yang ditemukan untuk level Anda telah aktif atau selesai."
+                : "⚔️ All discovered campaigns for your level have been active or completed."}
             </div>
           )}
         </div>
@@ -315,12 +403,14 @@ export default function LiveChallenges({ profileId, userLevel = 1, onEnrollSucce
         <div className="flex items-center gap-2 border-b border-slate-900 pb-2.5">
           <Trophy className="w-4 h-4 text-amber-500 animate-pulse" />
           <h4 className="text-[11px] font-bold font-mono tracking-widest text-slate-400 uppercase">
-            Hunter's Armory & Trophies
+            {language === "id" ? "Persenjataan & Trofi Pemburu" : "Hunter's Armory & Trophies"}
           </h4>
         </div>
 
-        <p className="text-[10px] sm:text-[11px] text-slate-450 leading-relaxed">
-          Unlock trophies through pure physical and fasting consistency. <span className="text-amber-400/90 font-semibold">Tapping a badge</span> reveals full unlocked details, criteria requirements, and XP logs.
+        <p className="text-[10px] sm:text-[11px] text-slate-450 leading-relaxed font-sans">
+          {language === "id"
+            ? "Buka trofi melalui konsistensi fisik dan puasa yang murni. Mengetuk lencana akan menampilkan detail lengkap yang terbuka, persyaratan kriteria, dan log XP."
+            : "Unlock trophies through pure physical and fasting consistency. Tapping a badge reveals full unlocked details, criteria requirements, and XP logs."}
         </p>
 
         <div className="grid grid-cols-2 gap-2.5 pt-2">
@@ -372,10 +462,10 @@ export default function LiveChallenges({ profileId, userLevel = 1, onEnrollSucce
 
                 <div className="space-y-1 w-full">
                   <span className={`text-[11px] sm:text-[12px] font-extrabold block leading-tight ${unlocked ? "text-amber-300 tracking-wide font-sans drop-shadow-sm" : "text-slate-200"}`}>
-                    {badge.name}
+                    {translateBadgeName(badge.name)}
                   </span>
                   <p className={`text-[9px] sm:text-[9.5px] leading-snug line-clamp-2 ${unlocked ? "text-slate-200 font-semibold" : "text-slate-400 font-normal"}`}>
-                    {badge.description}
+                    {translateBadgeDescription(badge.description)}
                   </p>
                 </div>
 
@@ -385,7 +475,7 @@ export default function LiveChallenges({ profileId, userLevel = 1, onEnrollSucce
                       ? "bg-amber-400 text-slate-950 border-amber-300 shadow-sm" 
                       : "bg-slate-900 border-slate-800 text-slate-300"
                   }`}>
-                    {unlocked ? "✓ UNLOCKED • " : ""}+{badge.rewardXp} XP
+                    {unlocked ? (language === "id" ? "✓ TERBUKA • " : "✓ UNLOCKED • ") : ""}+{badge.rewardXp} XP
                   </span>
                 </div>
               </div>
@@ -446,37 +536,49 @@ export default function LiveChallenges({ profileId, userLevel = 1, onEnrollSucce
                 <span className={`text-[10px] uppercase font-mono tracking-wider font-extrabold block ${
                   badges.some(b => b.id === selectedBadge.id) ? "text-amber-400 animate-pulse" : "text-slate-500"
                 }`}>
-                  {badges.some(b => b.id === selectedBadge.id) ? "🏺 Unlocked Trophy" : "🔒 Locked In Armory"}
+                  {badges.some(b => b.id === selectedBadge.id)
+                    ? (language === "id" ? "🏺 Trofi Terbuka" : "🏺 Unlocked Trophy")
+                    : (language === "id" ? "🔒 Terkunci di Persenjataan" : "🔒 Locked In Armory")}
                 </span>
-                <h3 className="text-lg font-black text-slate-100 tracking-wide font-sans">{selectedBadge.name}</h3>
+                <h3 className="text-lg font-black text-slate-100 tracking-wide font-sans">
+                  {translateBadgeName(selectedBadge.name)}
+                </h3>
               </div>
             </div>
 
             <div className="space-y-4 border-t border-slate-800/80 pt-4 text-xs">
               {/* Description without truncation */}
               <div className="space-y-1 bg-slate-950/30 p-3 rounded-xl border border-slate-850">
-                <span className="text-[9px] uppercase font-mono text-slate-500 tracking-widest block">Trophy Legend</span>
+                <span className="text-[9px] uppercase font-mono text-slate-500 tracking-widest block">
+                  {language === "id" ? "Legenda Trofi" : "Trophy Legend"}
+                </span>
                 <p className="text-slate-200 leading-relaxed font-semibold transition-colors">
-                  {selectedBadge.description}
+                  {translateBadgeDescription(selectedBadge.description)}
                 </p>
               </div>
 
               {/* Reward */}
               <div className="flex justify-between items-center bg-slate-950/50 p-3 rounded-xl border border-slate-800/60">
                 <div className="space-y-0.5">
-                  <span className="text-[9px] uppercase font-mono text-slate-500 tracking-widest block">Tribal Reward</span>
+                  <span className="text-[9px] uppercase font-mono text-slate-500 tracking-widest block">
+                    {language === "id" ? "Hadiah Suku" : "Tribal Reward"}
+                  </span>
                   <span className="text-sm font-black text-amber-400 flex items-center gap-1">
-                    💎 +{selectedBadge.rewardXp} XP Points
+                    💎 +{selectedBadge.rewardXp} {language === "id" ? "Poin XP" : "XP Points"}
                   </span>
                 </div>
                 
                 {/* Status indicator style */}
                 <div className="text-right">
-                  <span className="text-[9px] uppercase font-mono text-slate-500 tracking-widest block">Primal Status</span>
+                  <span className="text-[9px] uppercase font-mono text-slate-500 tracking-widest block">
+                    {language === "id" ? "Status Primal" : "Primal Status"}
+                  </span>
                   <span className={`text-[11px] font-black uppercase ${
                     badges.some(b => b.id === selectedBadge.id) ? "text-emerald-400" : "text-slate-400"
                   }`}>
-                    {badges.some(b => b.id === selectedBadge.id) ? "Earmarked ✓" : "Undiscovered"}
+                    {badges.some(b => b.id === selectedBadge.id)
+                      ? (language === "id" ? "Didapatkan ✓" : "Earmarked ✓")
+                      : (language === "id" ? "Belum Ditemukan" : "Undiscovered")}
                   </span>
                 </div>
               </div>
@@ -484,11 +586,13 @@ export default function LiveChallenges({ profileId, userLevel = 1, onEnrollSucce
               {/* Extra real-world proof: unlock date if available */}
               {badges.some(b => b.id === selectedBadge.id) && (
                 <div className="text-[10px] text-slate-400 font-mono bg-slate-950/30 p-2.5 rounded-lg border border-slate-900/60 flex items-center justify-between">
-                  <span>🗓️ Unlocked epoch date:</span>
+                  <span>🗓️ {language === "id" ? "Tanggal terbuka:" : "Unlocked epoch date:"}</span>
                   <span className="text-amber-300 font-bold">
                     {(() => {
                       const tx = transactions.find(t => t.source === `Unlocked Trophy: ${selectedBadge.name}`);
-                      return tx ? new Date(tx.createdAt).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' }) : "Recently Earned";
+                      return tx
+                        ? new Date(tx.createdAt).toLocaleString(language === "id" ? "id-ID" : undefined, { dateStyle: 'medium', timeStyle: 'short' })
+                        : (language === "id" ? "Baru Saja Didapatkan" : "Recently Earned");
                     })()}
                   </span>
                 </div>
@@ -501,7 +605,7 @@ export default function LiveChallenges({ profileId, userLevel = 1, onEnrollSucce
                 className="w-full py-2.5 px-4 rounded-xl font-bold tracking-wider text-[10px] uppercase bg-slate-800 text-slate-200 hover:bg-slate-700 active:scale-95 transition-all text-center border border-slate-700/50"
                 id="dismiss-badge-modal"
               >
-                Go Back
+                {language === "id" ? "Kembali" : "Go Back"}
               </button>
             </div>
           </div>
