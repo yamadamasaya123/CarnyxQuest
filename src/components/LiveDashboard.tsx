@@ -332,11 +332,11 @@ export default function LiveDashboard({
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               {meals.map((m) => (
                 <div key={m.id} className="p-3 bg-slate-900/50 border border-slate-850 rounded-xl space-y-2">
-                  <div className="flex justify-between items-center">
+                  <div className="flex justify-between items-center gap-2">
                     <span className="font-bold text-xs text-amber-200 truncate pr-2">{m.cutType}</span>
                     {m.isCarbZero && (
-                      <span className="bg-amber-500/10 text-amber-400 text-[8px] font-mono font-bold px-1 py-0.2 rounded shrink-0">
-                        Z-CARB
+                      <span className="inline-flex items-center justify-center text-center bg-amber-500/10 text-amber-400 border border-amber-500/20 text-[8px] font-mono font-bold px-1.5 py-0.5 rounded whitespace-nowrap shrink-0">
+                        ZERO CARBS
                       </span>
                     )}
                   </div>

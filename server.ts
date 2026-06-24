@@ -68,7 +68,7 @@ app.get("/api/usda-proxy", async (req, res) => {
       foods: rawHeuristic, 
       isDemoKey, 
       usingFallback: true, 
-      warning: "USDA search unavailable. Showing local carnivore database." 
+      warning: "USDA search unavailable" 
     });
   }
 });
@@ -89,7 +89,7 @@ function parseCategory(category: any): number {
 }
 
 // In-memory cache for all fetched Wger exercises
-let cachedWgerExercises: any[] | null = null;
+let cachedWgerExercises: any[] = [];
 let lastCacheFetchTime = 0;
 const CACHE_TTL_MS = 60 * 60 * 1000; // Cache for 1 hour
 
@@ -316,7 +316,7 @@ app.get("/api/wger-proxy", async (req, res) => {
   const now = Date.now();
   let usingCache = true;
 
-  if (!cachedWgerExercises || (now - lastCacheFetchTime > CACHE_TTL_MS)) {
+  if (cachedWgerExercises.length === 0 || (now - lastCacheFetchTime > CACHE_TTL_MS)) {
     usingCache = false;
     try {
       console.log("Pre-fetching/Caching broad Wger catalogue with limit=999...");
@@ -335,7 +335,7 @@ app.get("/api/wger-proxy", async (req, res) => {
     }
   }
 
-  if (cachedWgerExercises && cachedWgerExercises.length > 0) {
+  if (cachedWgerExercises.length > 0) {
     const formatted = searchAndRankExercises(cachedWgerExercises, query);
     res.json({
       exercises: formatted.slice(0, 15),
