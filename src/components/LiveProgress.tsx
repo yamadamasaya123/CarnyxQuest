@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { db } from "../lib/db";
+import { useLanguage } from "../lib/LanguageContext";
 import { ProgressRecord, FastingSession } from "../types";
 import {
   LineChart,
@@ -32,6 +33,7 @@ interface LiveProgressProps {
 }
 
 export default function LiveProgress({ profileId }: LiveProgressProps) {
+  const { t, language } = useLanguage();
   const [weights, setWeights] = useState<ProgressRecord[]>([]);
   const [weightInput, setWeightInput] = useState<string>("");
   const [notesInput, setNotesInput] = useState<string>("");
@@ -113,7 +115,7 @@ export default function LiveProgress({ profileId }: LiveProgressProps) {
   const lastFastSession = fastHistory.find((f) => f.status === "completed" || f.completed);
   const lastFastDate = lastFastSession 
     ? `${new Date(lastFastSession.endTime!).toLocaleDateString()} (${Math.round((new Date(lastFastSession.endTime!).getTime() - new Date(lastFastSession.startTime).getTime()) / (1000 * 3600))}h)` 
-    : "No completed fasts yet";
+    : (language === "id" ? "Belum ada puasa yang selesai" : "No completed fasts yet");
 
   // Formulate data for the Recharts weight line
   const chartWeightData = sortedWeights.map((w) => {
@@ -150,12 +152,14 @@ export default function LiveProgress({ profileId }: LiveProgressProps) {
           <div className="absolute top-0 left-0 h-1 w-full bg-amber-500"></div>
           <Zap className="w-5 h-5 mx-auto text-amber-500" />
           <span className="text-[9px] uppercase tracking-wider text-slate-500 font-mono font-bold block">
-            Streak Records
+            {language === "id" ? "Catatan Beruntun" : "Streak Records"}
           </span>
           <span className="text-xl font-black font-mono text-slate-100 block">
-            {currentStreakVal} / {longestStreakVal} Days
+            {currentStreakVal} / {longestStreakVal} {language === "id" ? "Hari" : "Days"}
           </span>
-          <span className="text-[9px] text-slate-500 font-mono block">Current / Longest</span>
+          <span className="text-[9px] text-slate-500 font-mono block">
+            {language === "id" ? "Saat Ini / Terlama" : "Current / Longest"}
+          </span>
         </div>
 
         {/* CURRENT WEIGHT Card */}
@@ -163,12 +167,16 @@ export default function LiveProgress({ profileId }: LiveProgressProps) {
           <div className="absolute top-0 left-0 h-1 w-full bg-red-500"></div>
           <Scale className="w-5 h-5 mx-auto text-red-400" />
           <span className="text-[9px] uppercase tracking-wider text-slate-500 font-mono font-bold block">
-            Current Weight
+            {language === "id" ? "Berat Saat Ini" : "Current Weight"}
           </span>
           <span className="text-xl font-black font-mono text-slate-100 block">
-            {currentWeight > 0 ? `${currentWeight} kg` : "No entries"}
+            {currentWeight > 0 ? `${currentWeight} kg` : (language === "id" ? "Belum ada entri" : "No entries")}
           </span>
-          <span className="text-[9px] text-slate-500 font-mono block">Initial: {initialWeight > 0 ? `${initialWeight} kg` : "Unset"}</span>
+          <span className="text-[9px] text-slate-500 font-mono block">
+            {language === "id"
+              ? `Awal: ${initialWeight > 0 ? `${initialWeight} kg` : "Belum diatur"}`
+              : `Initial: ${initialWeight > 0 ? `${initialWeight} kg` : "Unset"}`}
+          </span>
         </div>
 
         {/* WEIGHT THIS WEEK Card */}
@@ -176,12 +184,16 @@ export default function LiveProgress({ profileId }: LiveProgressProps) {
           <div className="absolute top-0 left-0 h-1 w-full bg-orange-500"></div>
           <Calendar className="w-5 h-5 mx-auto text-orange-400" />
           <span className="text-[9px] uppercase tracking-wider text-slate-500 font-mono font-bold block">
-            Weight this Week
+            {language === "id" ? "Berat Minggu Ini" : "Weight this Week"}
           </span>
           <span className="text-xl font-black font-mono text-slate-100 block">
-            {weightThisWeekVal > 0 ? `${weightThisWeekVal} kg` : "No entries"}
+            {weightThisWeekVal > 0 ? `${weightThisWeekVal} kg` : (language === "id" ? "Belum ada entri" : "No entries")}
           </span>
-          <span className="text-[9px] text-slate-500 font-mono block">{weightsThisWeek.length} entries in 7 days</span>
+          <span className="text-[9px] text-slate-500 font-mono block">
+            {language === "id"
+              ? `${weightsThisWeek.length} entri dalam 7 hari`
+              : `${weightsThisWeek.length} entries in 7 days`}
+          </span>
         </div>
 
         {/* WEEKLY CHANGE Card */}
@@ -193,16 +205,18 @@ export default function LiveProgress({ profileId }: LiveProgressProps) {
             <TrendingUp className="w-5 h-5 mx-auto text-red-400" />
           )}
           <span className="text-[9px] uppercase tracking-wider text-slate-500 font-mono font-bold block">
-            Weekly Change
+            {language === "id" ? "Perubahan Mingguan" : "Weekly Change"}
           </span>
           <span className="text-xl font-black font-mono text-slate-100 block">
             {hasWeeklyChange ? (
               `${weeklyChangeVal <= 0 ? "" : "+"}${weeklyChangeVal.toFixed(1)} kg`
             ) : (
-              "No comparison"
+              language === "id" ? "Tidak ada perbandingan" : "No comparison"
             )}
           </span>
-          <span className="text-[9px] text-slate-500 font-mono block">Dynamic trajectory</span>
+          <span className="text-[9px] text-slate-500 font-mono block">
+            {language === "id" ? "Lintasan dinamis" : "Dynamic trajectory"}
+          </span>
         </div>
 
         {/* LATEST COMPLETED FAST */}
@@ -210,12 +224,14 @@ export default function LiveProgress({ profileId }: LiveProgressProps) {
           <div className="absolute top-0 left-0 h-1 w-full bg-rose-500"></div>
           <Award className="w-5 h-5 mx-auto text-rose-500 animate-pulse" />
           <span className="text-[9px] uppercase tracking-wider text-slate-500 font-mono font-bold block">
-            Last Completed Fast
+            {language === "id" ? "Puasa Selesai Terakhir" : "Last Completed Fast"}
           </span>
           <span className="text-[10px] font-bold font-mono text-rose-300 block truncate mt-1">
             {lastFastDate}
           </span>
-          <span className="text-[9px] text-slate-500 font-mono block">Anatomical success</span>
+          <span className="text-[9px] text-slate-500 font-mono block">
+            {language === "id" ? "Keberhasilan anatomi" : "Anatomical success"}
+          </span>
         </div>
       </div>
 
@@ -226,13 +242,13 @@ export default function LiveProgress({ profileId }: LiveProgressProps) {
 
           <h4 className="text-xs font-bold uppercase tracking-wider font-mono text-amber-400 mb-4 flex items-center gap-1.5 border-b border-slate-900 pb-2">
             <Scale className="w-4 h-4 text-amber-500" />
-            Lock In Weight Entry
+            {language === "id" ? "Simpan Catatan Berat Badan" : "Lock In Weight Entry"}
           </h4>
 
           <form onSubmit={handleLogWeight} className="space-y-4">
             <div>
               <label className="block text-[10px] uppercase font-bold tracking-wider mb-1.5 text-slate-400 font-mono">
-                Current Mass (kg)
+                {language === "id" ? "Massa Saat Ini (kg)" : "Current Mass (kg)"}
               </label>
               <input
                 type="number"
@@ -249,13 +265,13 @@ export default function LiveProgress({ profileId }: LiveProgressProps) {
 
             <div>
               <label className="block text-[10px] uppercase font-bold tracking-wider mb-1.5 text-slate-400 font-mono">
-                Physical Manifest Notes
+                {language === "id" ? "Catatan Manifestasi Fisik" : "Physical Manifest Notes"}
               </label>
               <textarea
                 rows={3}
                 value={notesInput}
                 onChange={(e) => setNotesInput(e.target.value)}
-                placeholder="Feeling incredibly streamlined, vascularity showing in lower obliques, fat-burning is optimal."
+                placeholder={language === "id" ? "Merasa sangat ramping, vaskularitas terlihat di otot perut bawah, pembakaran lemak optimal." : "Feeling incredibly streamlined, vascularity showing in lower obliques, fat-burning is optimal."}
                 className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200 placeholder:text-slate-650 focus:outline-none focus:border-amber-500"
               />
             </div>
@@ -265,14 +281,14 @@ export default function LiveProgress({ profileId }: LiveProgressProps) {
               className="w-full bg-amber-600 hover:bg-amber-500 text-white font-bold font-mono uppercase tracking-wider text-xs py-3 h-10 cursor-pointer rounded-xl flex items-center justify-center gap-1.5 border border-amber-500/30 transition-all"
             >
               <Plus className="w-4 h-4" />
-              <span>Record weight entry</span>
+              <span>{language === "id" ? "Catat Entri Berat Badan" : "Record weight entry"}</span>
             </button>
           </form>
 
           {/* HISTORIES LIST */}
           <div className="mt-6 space-y-3">
             <span className="text-[10px] uppercase font-bold tracking-wider text-slate-500 font-mono block">
-              Recent Weight Log history
+              {language === "id" ? "Riwayat Log Berat Badan Terakhir" : "Recent Weight Log history"}
             </span>
             <div className="space-y-2 max-h-48 overflow-y-auto pr-1 text-xs">
               {sortedWeights.slice().reverse().map((w) => (
@@ -298,12 +314,12 @@ export default function LiveProgress({ profileId }: LiveProgressProps) {
           <div className="space-y-3">
             <h4 className="text-[11px] font-bold font-mono tracking-widest text-slate-400 uppercase border-b border-slate-900 pb-2 flex items-center gap-1.5">
               <Activity className="w-4 h-4 text-amber-500" />
-              Weight progress over time (kG)
+              {language === "id" ? "Perkembangan Berat Badan dari Waktu ke Waktu (kg)" : "Weight progress over time (kg)"}
             </h4>
             <div className="h-48 w-full mt-2">
               {chartWeightData.length === 0 ? (
                 <div className="h-full flex items-center justify-center text-xs text-slate-600">
-                  Log at least 2 weights above to see lines.
+                  {language === "id" ? "Catat setidaknya 2 entri berat badan di atas untuk melihat grafik." : "Log at least 2 weights above to see lines."}
                 </div>
               ) : (
                 <ResponsiveContainer width="100%" height="100%">
@@ -329,12 +345,12 @@ export default function LiveProgress({ profileId }: LiveProgressProps) {
           <div className="space-y-3 pt-2">
             <h4 className="text-[11px] font-bold font-mono tracking-widest text-slate-400 uppercase border-b border-slate-900 pb-2 flex items-center gap-1.5">
               <Layers className="w-4 h-4 text-amber-500" />
-              Fasting History Duration (consecutive Hours)
+              {language === "id" ? "Durasi Riwayat Puasa (Jam Berturut-turut)" : "Fasting History Duration (consecutive Hours)"}
             </h4>
             <div className="h-44 w-full mt-2">
               {chartFastData.length === 0 ? (
                 <div className="h-full flex items-center justify-center text-xs text-slate-600">
-                  Complete fasting protocols in the clock simulator to plot bars.
+                  {language === "id" ? "Selesaikan protokol puasa di simulator jam untuk melihat diagram batang." : "Complete fasting protocols in the clock simulator to plot bars."}
                 </div>
               ) : (
                 <ResponsiveContainer width="100%" height="100%">

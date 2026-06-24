@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { KetoRatio } from "../types";
 import { db } from "../lib/db";
+import { useLanguage } from "../lib/LanguageContext";
 import {
   Flame,
   Search,
@@ -21,6 +22,7 @@ interface LiveMealsProps {
 }
 
 export default function LiveMeals({ profileId, onLoggedSuccess, onSuccessNotification }: LiveMealsProps) {
+  const { t, language } = useLanguage();
   // Input fields
   const [foodNameInput, setFoodNameInput] = useState<string>(""); // USDA or Custom name
   const [weightGramsInput, setWeightGramsInput] = useState<string>("100");
@@ -72,16 +74,16 @@ export default function LiveMeals({ profileId, onLoggedSuccess, onSuccessNotific
         const data = await response.json();
         setUsdaSuggestions(data.foods || []);
         if (data.usingFallback) {
-          setUsdaSearchWarning(data.warning || "USDA search unavailable");
+          setUsdaSearchWarning(data.warning || (language === "id" ? "Pencarian USDA tidak tersedia" : "USDA search unavailable"));
         } else {
           setUsdaSearchWarning(null);
         }
       } else {
-        setUsdaSearchWarning("USDA search unavailable");
+        setUsdaSearchWarning(language === "id" ? "Pencarian USDA tidak tersedia" : "USDA search unavailable");
       }
     } catch (err) {
       console.error("USDA live search fails:", err);
-      setUsdaSearchWarning("USDA search unavailable");
+      setUsdaSearchWarning(language === "id" ? "Pencarian USDA tidak tersedia" : "USDA search unavailable");
     } finally {
       setUsdaLoading(false);
     }
@@ -109,11 +111,11 @@ export default function LiveMeals({ profileId, onLoggedSuccess, onSuccessNotific
     if (isSubmitting) return;
 
     if (weightGrams <= 0) {
-      alert("Please enter a valid portion size greater than 0 grams.");
+      alert(language === "id" ? "Harap masukkan ukuran porsi valid yang lebih besar dari 0 gram." : "Please enter a valid portion size greater than 0 grams.");
       return;
     }
 
-    const finalItemName = foodNameInput.trim() || `${weightGrams}g Carnivore Meal`;
+    const finalItemName = foodNameInput.trim() || `${weightGrams}g ${language === "id" ? "Makanan Karnivora" : "Carnivore Meal"}`;
 
     setIsSubmitting(true);
     try {
@@ -132,11 +134,11 @@ export default function LiveMeals({ profileId, onLoggedSuccess, onSuccessNotific
       
       if (res.shieldActivated) {
         if (onSuccessNotification) {
-          onSuccessNotification("Marrow Shield activated. Your streak has been protected.");
+          onSuccessNotification(language === "id" ? "Perisai Sumsum diaktifkan. Beruntun Anda telah dilindungi." : "Marrow Shield activated. Your streak has been protected.");
         }
       } else if (res.streakBroken) {
         if (onSuccessNotification) {
-          onSuccessNotification("No active Marrow Shields. Streak broken.");
+          onSuccessNotification(language === "id" ? "Tidak ada Perisai Sumsum yang aktif. Beruntun harian terputus." : "No active Marrow Shields. Streak broken.");
         }
       }
 
@@ -148,7 +150,7 @@ export default function LiveMeals({ profileId, onLoggedSuccess, onSuccessNotific
       setNotes("");
       setWeightGramsInput("100");
     } catch (err: any) {
-      alert("Error logging meal resources: " + err.message);
+      alert((language === "id" ? "Gagal mencatat data makanan: " : "Error logging meal resources: ") + err.message);
     } finally {
       setIsSubmitting(false);
     }
@@ -173,7 +175,7 @@ export default function LiveMeals({ profileId, onLoggedSuccess, onSuccessNotific
         <div className="flex items-center gap-2 border-b border-slate-900 pb-3">
           <Beef className="w-5 h-5 text-amber-500" />
           <h3 className="text-sm font-bold uppercase tracking-wider font-mono text-amber-400">
-            Commence Meat Log
+            {t("addPreyMeal")}
           </h3>
         </div>
 
@@ -181,14 +183,14 @@ export default function LiveMeals({ profileId, onLoggedSuccess, onSuccessNotific
         <div className="space-y-2 relative">
           <label className="block text-[11px] uppercase tracking-wider font-bold text-amber-400/80 font-mono flex items-center gap-1">
             <Search className="w-3.5 h-3.5" />
-            Live Search USDA FoodData Database
+            {t("usdaSearchTitle")}
           </label>
           <div className="relative">
             <input
               type="text"
               value={usdaSearchQuery}
               onChange={handleUsdaQueryChange}
-              placeholder="Query ribeye, salmon, chicken, beef liver..."
+              placeholder={t("usdaSearchPlaceholder")}
               className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs placeholder:text-slate-650 text-slate-100 focus:outline-none focus:border-amber-500"
             />
             {usdaLoading && (
@@ -199,7 +201,7 @@ export default function LiveMeals({ profileId, onLoggedSuccess, onSuccessNotific
           {usdaLoading && (
             <div className="text-[11px] text-amber-500 font-mono flex items-center gap-2 mt-1 animate-pulse" id="usda-searching-indicator">
               <Loader2 className="w-3.5 h-3.5 animate-spin" />
-              <span>Searching USDA Food Database...</span>
+              <span>{t("usdaSearching")}</span>
             </div>
           )}
 
@@ -225,7 +227,7 @@ export default function LiveMeals({ profileId, onLoggedSuccess, onSuccessNotific
                     <span>•</span>
                     <span>P: {item.proteinGrams}g</span>
                     <span>•</span>
-                    <span>F: {item.fatGrams}g</span>
+                    <span>{language === "id" ? "L: " : "F: "}{item.fatGrams}g</span>
                   </div>
                 </button>
               ))}
@@ -238,20 +240,20 @@ export default function LiveMeals({ profileId, onLoggedSuccess, onSuccessNotific
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-[10px] uppercase font-bold tracking-wider mb-1.5 text-slate-400 font-mono">
-                Meat Nom (Food Name Label)
+                {t("mealCutTypeLabel")}
               </label>
               <input
                 type="text"
                 value={foodNameInput}
                 onChange={(e) => setFoodNameInput(e.target.value)}
-                placeholder="e.g., Grass-fed NZ Ribeye Cut"
+                placeholder={t("mealCutPlaceholder")}
                 className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200 placeholder:text-slate-650 focus:outline-none focus:border-amber-500"
               />
             </div>
 
             <div>
               <label className="block text-[10px] uppercase font-bold tracking-wider mb-1.5 text-slate-400 font-mono">
-                Portion Devoured (Grams)
+                {t("mealWeightLabel")}
               </label>
               <div className="relative">
                 <input
@@ -279,7 +281,7 @@ export default function LiveMeals({ profileId, onLoggedSuccess, onSuccessNotific
           {/* DYNAMIC NUTRITION FIELDS */}
           <div className="bg-slate-900/60 border border-slate-800 rounded-xl p-4">
             <h4 className="text-[11px] uppercase font-bold tracking-wider text-slate-400 mb-3 font-mono">
-              Estimated Nutritional Telemetry (Per Selected Portion)
+              {language === "id" ? "Estimasi Telemetri Nutrisi (Per Porsi Terpilih)" : "Estimated Nutritional Telemetry (Per Selected Portion)"}
             </h4>
             <div className="grid grid-cols-3 gap-2 text-center">
               <div className="bg-slate-950 p-2.5 rounded-xl border border-slate-800">
@@ -287,7 +289,7 @@ export default function LiveMeals({ profileId, onLoggedSuccess, onSuccessNotific
                   {Math.round((calories * weightGrams) / 100)}
                 </div>
                 <div className="text-[9px] uppercase tracking-wider text-slate-500 font-semibold font-mono">
-                  Calories (kCal)
+                  {language === "id" ? "Kalori (kCal)" : "Calories (kCal)"}
                 </div>
               </div>
               <div className="bg-slate-950 p-2.5 rounded-xl border border-slate-800">
@@ -295,7 +297,7 @@ export default function LiveMeals({ profileId, onLoggedSuccess, onSuccessNotific
                   {Math.round((proteinGrams * weightGrams) / 100)}g
                 </div>
                 <div className="text-[9px] uppercase tracking-wider text-slate-500 font-semibold font-mono">
-                  Prot Protein
+                  {language === "id" ? "Protein" : "Prot Protein"}
                 </div>
               </div>
               <div className="bg-slate-950 p-2.5 rounded-xl border border-slate-800">
@@ -303,7 +305,7 @@ export default function LiveMeals({ profileId, onLoggedSuccess, onSuccessNotific
                   {Math.round((fatGrams * weightGrams) / 100)}g
                 </div>
                 <div className="text-[9px] uppercase tracking-wider text-slate-500 font-semibold font-mono">
-                  Fat Lipid
+                  {language === "id" ? "Lemak" : "Fat Lipid"}
                 </div>
               </div>
             </div>
@@ -318,20 +320,23 @@ export default function LiveMeals({ profileId, onLoggedSuccess, onSuccessNotific
                 className="rounded border-slate-800 bg-slate-900 checked:bg-amber-500 text-amber-500 focus:ring-0 focus:outline-none w-4 h-4 cursor-pointer"
               />
               <span className="font-mono text-[10px] uppercase tracking-wider text-amber-400 font-bold">
-                Completely Zero Carb (Carnivore Checklist)
+                {t("completelyZeroCarbLabel")}
               </span>
             </label>
           </div>
 
           <div>
-            <label className="block text-[10px] uppercase font-bold tracking-wider mb-1.5 text-slate-400 font-mono">
-              Log Chronicles (Notes)
+            <label className="block text-[10px] uppercase font-bold tracking-wider mb-1 text-slate-400 font-mono">
+              {t("mealNotesLabel")}
             </label>
+            <span className="text-[10px] text-amber-500/80 font-bold block mb-1.5 font-mono">
+              {t("notesOptional")}
+            </span>
             <textarea
               rows={2}
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              placeholder="e.g. Broke my OMAD fast with grass-fed prime rib. Feeling high cognitive sharpness."
+              placeholder={t("mealNotesPlaceholder")}
               className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200 placeholder:text-slate-650 focus:outline-none focus:border-amber-500"
             />
           </div>
@@ -344,12 +349,12 @@ export default function LiveMeals({ profileId, onLoggedSuccess, onSuccessNotific
             {isSubmitting ? (
               <>
                 <Loader2 className="w-4 h-4 animate-spin text-white" />
-                <span>TRANSMITTING HUNT RECORD...</span>
+                <span>{t("loggingPrey")}</span>
               </>
             ) : (
               <>
                 <Plus className="w-4 h-4" />
-                <span>Secure Log in meals_log (+5 XP)</span>
+                <span>{language === "id" ? "Catat Pesta Mangsa (+5 XP)" : "Secure Log in meals_log (+5 XP)"}</span>
               </>
             )}
           </button>
@@ -359,13 +364,13 @@ export default function LiveMeals({ profileId, onLoggedSuccess, onSuccessNotific
       {/* RECENT MEALS HISTORY: Right hand column */}
       <div className="lg:col-span-5 bg-slate-950 border border-slate-900 rounded-2xl p-5 space-y-4">
         <h4 className="text-[11px] font-bold font-mono tracking-widest text-slate-400 uppercase border-b border-slate-900 pb-2">
-          Your Recent Meals Log Chronicle ({mealsHistory.length})
+          {language === "id" ? `Kronik Log Makanan Terbaru Anda (${mealsHistory.length})` : `Your Recent Meals Log Chronicle (${mealsHistory.length})`}
         </h4>
 
         {mealsHistory.length === 0 ? (
           <div className="py-12 text-center text-xs text-slate-500 space-y-2">
             <Beef className="w-10 h-10 mx-auto opacity-10 text-slate-400" />
-            <p>Your hunt journal is vacant. Secure your first prey meal above to earn experience.</p>
+            <p>{t("noMealsLogged")}</p>
           </div>
         ) : (
           <div className="space-y-3 max-h-[480px] overflow-y-auto pr-1">

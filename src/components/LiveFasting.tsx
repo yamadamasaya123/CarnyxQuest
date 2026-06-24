@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { db, DEFAULT_PROTOCOLS, DEFAULT_MILESTONES, addXpToProfile, BADGE_ID_MAP } from "../lib/db";
+import { useLanguage } from "../lib/LanguageContext";
 import { supabase } from "../lib/supabase";
 import { FastingSession } from "../types";
 import {
@@ -23,6 +24,54 @@ interface LiveFastingProps {
 export default function LiveFasting({ profileId, onFastingComplete }: LiveFastingProps) {
   const [protocols] = useState(DEFAULT_PROTOCOLS);
   const [selectedProtocolId, setSelectedProtocolId] = useState<string>(DEFAULT_PROTOCOLS[0].id);
+  const { t, language } = useLanguage();
+
+  const translateProtocolName = (name: string) => {
+    return name;
+  };
+
+  const translateProtocolDescription = (desc: string) => {
+    if (language !== "id") return desc;
+    switch (desc) {
+      case "Beginner fasting protocol with 16 hours fasting period and 8 hours eating window.":
+        return "Protokol puasa bagi pemula dengan masa puasa 16 jam dan jendela makan 8 jam.";
+      case "Advanced Window protocol, boosting cellular cleansing, ketosis activation, and fat burn.":
+        return "Protokol tingkat lanjut, meningkatkan pembersihan seluler, aktivasi ketosis, dan pembakaran lemak.";
+      case "One Meal A Day. Ultra high efficiency protocol for deep cognitive focus and metabolic flexibility.":
+        return "Satu Kali Makan Sehari. Protokol efisiensi sangat tinggi untuk fokus kognitif mendalam dan fleksibilitas metabolisme.";
+      case "Full daily gut reset on spring water or premium bone broth.":
+        return "Penyetelan ulang sistem pencernaan harian secara penuh dengan air mineral atau kaldu tulang premium.";
+      case "Extended Hunter Fast for structural autophagy, cellular clean up, and immune cell regeneration.":
+        return "Puasa Pemburu yang Diperpanjang untuk autofagi struktural, pembersihan seluler, dan regenerasi sel imun.";
+      default:
+        return desc;
+    }
+  };
+
+  const translateMilestoneLabel = (label: string) => {
+    if (language !== "id") return label;
+    switch (label) {
+      case "Fat Adaptation Started": return "Adaptasi Lemak Dimulai";
+      case "Halfway Ascent": return "Pendakian Setengah Jalan";
+      case "Deep Lipid Phase": return "Fase Lipid Mendalam";
+      case "Fast Completed": return "Puasa Selesai";
+      case "Blood Glucose Drop": return "Penurunan Glukosa Darah";
+      case "Ketosis Active": return "Ketosis Aktif";
+      case "Growth Hormone Peak": return "Puncak Hormon Pertumbuhan";
+      case "Glycogen Depleted": return "Glikogen Habis";
+      case "Deep Ketosis": return "Ketosis Mendalam";
+      case "Autophagy Surge": return "Lonjakan Autofagi";
+      case "Stem Cell Influx": return "Aliran Sel Punca";
+      case "Liver Depletion": return "Penyusutan Cadangan Hati";
+      case "Fat-Burn Mode": return "Mode Pembakaran Lemak";
+      case "Autophagy Shock": return "Kejutan Autofagi";
+      case "Intestinal Reset": return "Atur Ulang Usus";
+      case "Full Depletion": return "Pengosongan Penuh";
+      case "Autophagy Peak": return "Puncak Autofagi";
+      case "Inflammation Cleanse": return "Pembersihan Inflamasi";
+      default: return label;
+    }
+  };
 
   const [activeSession, setActiveSession] = useState<FastingSession | null>(null);
   const [elapsedSeconds, setElapsedSeconds] = useState<number>(0);
@@ -201,7 +250,9 @@ export default function LiveFasting({ profileId, onFastingComplete }: LiveFastin
     return (
       <div className="col-span-12 bg-slate-950 border border-slate-900 rounded-2xl p-8 text-center text-slate-400 space-y-4 flex flex-col items-center justify-center min-h-[400px]">
         <div className="w-12 h-12 rounded-full border-4 border-amber-500/20 border-t-amber-500 animate-spin"></div>
-        <p className="font-mono text-xs tracking-widest text-amber-500 uppercase animate-pulse">Syncing Metabolic Telemetry...</p>
+        <p className="font-mono text-xs tracking-widest text-amber-500 uppercase animate-pulse">
+          {language === "id" ? "Menyingkronkan Telemetri Metabolik..." : "Syncing Metabolic Telemetry..."}
+        </p>
       </div>
     );
   }
@@ -215,21 +266,21 @@ export default function LiveFasting({ profileId, onFastingComplete }: LiveFastin
         <div className="flex items-center gap-2 border-b border-slate-900 pb-3">
           <Clock className="w-5 h-5 text-amber-500" />
           <h3 className="text-sm font-bold uppercase tracking-wider font-mono text-amber-400">
-            Metabolic Autophagy Gateway
+            {language === "id" ? "Gerbang Autofagi Metabolik" : "Metabolic Autophagy Gateway"}
           </h3>
         </div>
 
         {errorMsg && (
           <div className="bg-red-950/40 border border-red-500/20 text-red-300 p-4 rounded-xl text-xs flex items-center justify-between gap-2 animate-pulse">
             <div className="flex items-center gap-2">
-              <span className="font-bold">⚠️ Connection Glitch:</span>
+              <span className="font-bold">{language === "id" ? "⚠️ Gangguan Koneksi:" : "⚠️ Connection Glitch:"}</span>
               <span>{errorMsg}</span>
             </div>
             <button
               onClick={loadData}
               className="px-3 py-1 bg-red-500/10 hover:bg-red-500/20 rounded font-mono font-bold text-[10px]"
             >
-              Retry
+              {language === "id" ? "Coba Lagi" : "Retry"}
             </button>
           </div>
         )}
@@ -244,7 +295,7 @@ export default function LiveFasting({ profileId, onFastingComplete }: LiveFastin
               onClick={() => setInfoMsg(null)}
               className="text-slate-400 hover:text-slate-200 text-[10px] font-bold font-mono"
             >
-              Dismiss
+              {language === "id" ? "Tutup" : "Dismiss"}
             </button>
           </div>
         )}
@@ -253,7 +304,7 @@ export default function LiveFasting({ profileId, onFastingComplete }: LiveFastin
         {!activeSession ? (
           <div className="space-y-3">
             <label className="block text-[11px] uppercase tracking-wider font-bold text-slate-400 font-mono">
-              Choose Fasting Protocol Ritual
+              {language === "id" ? "Pilih Ritual Protokol Puasa" : "Choose Fasting Protocol Ritual"}
             </label>
             <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
               {protocols.map((p) => (
@@ -272,14 +323,18 @@ export default function LiveFasting({ profileId, onFastingComplete }: LiveFastin
               ))}
             </div>
             <div className="bg-slate-900/40 border border-slate-800 p-3 rounded-xl text-xs text-slate-400">
-              <span className="font-bold text-slate-300">Protocol Spec: </span>
-              {activeProtocol.description}
+              <span className="font-bold text-slate-300">{language === "id" ? "Spesifikasi Protokol: " : "Protocol Spec: "}</span>
+              {translateProtocolDescription(activeProtocol.description)}
             </div>
           </div>
         ) : (
           <div className="bg-slate-900 p-3.5 rounded-xl border border-amber-500/10 text-xs text-slate-400">
-            <span className="text-amber-400 font-mono font-bold block mb-1">🔥 COMMITTED protocol: {activeProtocol.name}</span>
-            Your metabolic channels are locked in. Complete your current hunt before modifying the clock.
+            <span className="text-amber-400 font-mono font-bold block mb-1">
+              {language === "id" ? `🔥 PROTOKOL DIJALANKAN: ${activeProtocol.name}` : `🔥 COMMITTED protocol: ${activeProtocol.name}`}
+            </span>
+            {language === "id"
+              ? "Saluran metabolisme Anda terkunci. Selesaikan perburuan Anda saat ini sebelum mengubah jam."
+              : "Your metabolic channels are locked in. Complete your current hunt before modifying the clock."}
           </div>
         )}
 
@@ -294,19 +349,19 @@ export default function LiveFasting({ profileId, onFastingComplete }: LiveFastin
             ></div>
 
             <span className="text-[10px] uppercase tracking-wider font-extrabold text-slate-500 font-mono">
-              Elapsed Duration
+              {language === "id" ? "Durasi Berjalan" : "Elapsed Duration"}
             </span>
             <span className="text-2xl md:text-3xl font-mono font-black text-slate-100 tracking-wider my-1.5 font-bold">
               {formatTime(elapsedSeconds)}
             </span>
             <span className="text-[9.5px] uppercase font-bold text-amber-500/70 font-mono">
-              Target: {activeProtocol.targetHours} hours
+              {language === "id" ? `Target: ${activeProtocol.targetHours} jam` : `Target: ${activeProtocol.targetHours} hours`}
             </span>
 
             {activeSession && (
               <div className="mt-3 bg-amber-500/10 text-amber-400 border border-amber-500/20 rounded px-2 py-0.5 text-[9px] font-mono font-bold flex items-center gap-1">
                 <BatteryCharging className="w-3 h-3 animate-pulse" />
-                <span>ACTIVE {progressPercent}%</span>
+                <span>{language === "id" ? "AKTIF" : "ACTIVE"} {progressPercent}%</span>
               </div>
             )}
           </div>
@@ -316,8 +371,8 @@ export default function LiveFasting({ profileId, onFastingComplete }: LiveFastin
         {activeSession && (
           <div className="space-y-1.5">
             <div className="flex justify-between text-[10px] font-mono text-slate-400">
-              <span>Metabolic Ascent</span>
-              <span>{progressPercent}% Complete</span>
+              <span>{language === "id" ? "Pendakian Metabolik" : "Metabolic Ascent"}</span>
+              <span>{progressPercent}% {language === "id" ? "Selesai" : "Complete"}</span>
             </div>
             <div className="w-full h-2 bg-slate-900 rounded-full overflow-hidden border border-slate-800">
               <div
@@ -344,7 +399,11 @@ export default function LiveFasting({ profileId, onFastingComplete }: LiveFastin
                 }`}
               >
                 <Play className="w-4 h-4 fill-white text-white" />
-                <span>{isActionLoading ? "IGNITING PROTOCOL..." : "IGNITE METABOLIC SHIFT"}</span>
+                <span>
+                  {isActionLoading
+                    ? (language === "id" ? "MENYALAKAN PROTOKOL..." : "IGNITING PROTOCOL...")
+                    : (language === "id" ? "MULAI TRANSISI METABOLIK" : "IGNITE METABOLIC SHIFT")}
+                </span>
               </button>
             ) : (
               <>
@@ -366,7 +425,11 @@ export default function LiveFasting({ profileId, onFastingComplete }: LiveFastin
                   }`}
                 >
                   <CheckCircle2 className="w-4 h-4" />
-                  <span>{isActionLoading ? "SAVING..." : "COMPLETE FAST & LOG"}</span>
+                  <span>
+                    {isActionLoading
+                      ? (language === "id" ? "MENYIMPAN..." : "SAVING...")
+                      : (language === "id" ? "SELESAIKAN PUASA & CATAT" : "COMPLETE FAST & LOG")}
+                  </span>
                 </button>
 
                 <button
@@ -376,7 +439,7 @@ export default function LiveFasting({ profileId, onFastingComplete }: LiveFastin
                   title="Abort fast"
                 >
                   <AlertTriangle className="w-4 h-4" />
-                  <span className="hidden md:inline">ABORT</span>
+                  <span className="hidden md:inline">{language === "id" ? "BATAL" : "ABORT"}</span>
                 </button>
               </>
             )}
@@ -389,10 +452,12 @@ export default function LiveFasting({ profileId, onFastingComplete }: LiveFastin
         <div className="space-y-3">
           <h4 className="text-[11px] font-bold font-mono tracking-widest text-slate-400 uppercase border-b border-slate-900 pb-2 flex items-center gap-1.5">
             <Award className="w-4 h-4 text-amber-500" />
-            Biological Milestone Rewards
+            {language === "id" ? "Hadiah Pencapaian Biologis" : "Biological Milestone Rewards"}
           </h4>
           <p className="text-[10.5px] text-slate-500 mb-2">
-            Earn high-experience multipliers by reaching key anatomical milestones during this fast:
+            {language === "id"
+              ? "Dapatkan pengganda pengalaman tinggi dengan mencapai tonggak anatomi utama selama puasa ini:"
+              : "Earn high-experience multipliers by reaching key anatomical milestones during this fast:"}
           </p>
 
           <div className="space-y-2 max-h-[350px] overflow-y-auto pr-1">
@@ -408,8 +473,12 @@ export default function LiveFasting({ profileId, onFastingComplete }: LiveFastin
                   }`}
                 >
                   <div className="space-y-0.5">
-                    <span className="text-xs font-bold block">{m.label}</span>
-                    <span className="text-[9.5px] font-mono">Requires {m.milestoneHour} consecutive hours</span>
+                    <span className="text-xs font-bold block">{translateMilestoneLabel(m.label)}</span>
+                    <span className="text-[9.5px] font-mono">
+                      {language === "id"
+                        ? `Membutuhkan ${m.milestoneHour} jam berturut-turut`
+                        : `Requires ${m.milestoneHour} consecutive hours`}
+                    </span>
                   </div>
                   <div className="text-right">
                     <span className="bg-amber-500/10 text-amber-400 border border-amber-500/20 text-[10px] font-mono font-bold px-1.5 py-0.5 rounded">
@@ -424,19 +493,31 @@ export default function LiveFasting({ profileId, onFastingComplete }: LiveFastin
 
         {/* FAST HISTORY SNAPSHOT */}
         <div className="pt-3 border-t border-slate-900 font-mono text-[10px]">
-          <span className="text-slate-500 uppercase font-bold tracking-wider block mb-2">LAST EXPEDITION FAST</span>
+          <span className="text-slate-500 uppercase font-bold tracking-wider block mb-2">
+            {language === "id" ? "PUASA EKSPEDISI TERAKHIR" : "LAST EXPEDITION FAST"}
+          </span>
           {fastHistory.length === 0 ? (
-            <span className="text-slate-600 italic block">No completed historical fast coordinates found.</span>
+            <span className="text-slate-600 italic block font-mono">
+              {language === "id" ? "Tidak ada koordinat riwayat puasa selesai yang ditemukan." : "No completed historical fast coordinates found."}
+            </span>
           ) : (
             <div className="bg-slate-900/40 p-2.5 rounded-lg border border-slate-800 flex justify-between items-center">
               <div>
-                <span className="text-slate-200 block font-bold">Protocol: {fastHistory[0].status === "completed" ? "Successfully Completed" : "Interrupted"}</span>
-                <span className="text-slate-500 block text-[9px]">Logged at: {new Date(fastHistory[0].createdAt).toLocaleDateString()}</span>
+                <span className="text-slate-200 block font-bold">
+                  {language === "id"
+                    ? `Protokol: ${fastHistory[0].status === "completed" ? "Berhasil Diselesaikan" : "Terputus"}`
+                    : `Protocol: ${fastHistory[0].status === "completed" ? "Successfully Completed" : "Interrupted"}`}
+                </span>
+                <span className="text-slate-500 block text-[9px]">
+                  {language === "id" ? "Dicatat pada: " : "Logged at: "}{new Date(fastHistory[0].createdAt).toLocaleDateString()}
+                </span>
               </div>
               <span className={`text-[10px] px-2 py-0.5 rounded uppercase font-bold ${
                 fastHistory[0].status === "completed" ? "bg-emerald-500/10 text-emerald-400" : "bg-red-500/10 text-red-500"
               }`}>
-                {fastHistory[0].status}
+                {language === "id"
+                  ? (fastHistory[0].status === "completed" ? "SELESAI" : "TERPUTUS")
+                  : fastHistory[0].status}
               </span>
             </div>
           )}

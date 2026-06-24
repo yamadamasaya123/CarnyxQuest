@@ -265,6 +265,7 @@ function mapProfile(p: any): UserProfile {
     experience: p.experience || 0,
     goldPoints: p.gold_points || 50,
     createdAt: p.created_at,
+    preferredLanguage: p.preferred_language || "en",
   };
 }
 
@@ -1102,13 +1103,18 @@ class SupabaseDB {
   }
 
   public async updateProfile(profile: UserProfile): Promise<UserProfile> {
-    await supabase.from('profiles').update({
+    const payload: any = {
       display_name: profile.displayName,
       primal_class: 'Chieftain', // Safely store the starting enum value to avoid invalid DB enum errors
       level: profile.level,
       experience: profile.experience,
       gold_points: profile.goldPoints
-    }).eq('id', profile.id);
+    };
+    if (profile.preferredLanguage) {
+      payload.preferred_language = profile.preferredLanguage;
+    }
+
+    await supabase.from('profiles').update(payload).eq('id', profile.id);
 
     // Automatic Achievement Check: Level 5 badge check (Apex Predator - level_5)
     if (profile.level >= 5) {
@@ -1116,6 +1122,12 @@ class SupabaseDB {
     }
 
     return profile;
+  }
+
+  public async updatePreferredLanguage(profileId: string, lang: 'en' | 'id'): Promise<void> {
+    await supabase.from('profiles').update({
+      preferred_language: lang
+    }).eq('id', profileId);
   }
 
   public async buyShield(profileId: string): Promise<{ success: boolean; profile?: UserProfile; error?: string }> {

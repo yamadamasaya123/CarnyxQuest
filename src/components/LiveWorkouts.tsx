@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { db } from "../lib/db";
+import { useLanguage } from "../lib/LanguageContext";
 import { WorkoutLog } from "../types";
 import {
   Dumbbell,
@@ -22,6 +23,7 @@ interface LiveWorkoutsProps {
 }
 
 export default function LiveWorkouts({ profileId, onWorkoutLogged }: LiveWorkoutsProps) {
+  const { t, language } = useLanguage();
   // State variables for form logging
   const [exerciseName, setExerciseName] = useState<string>("");
   const [sets, setSets] = useState<number>(3);
@@ -93,25 +95,25 @@ export default function LiveWorkouts({ profileId, onWorkoutLogged }: LiveWorkout
           const data = await res.json();
           setSuggestions(data.exercises || []);
           if (data.usingFallback) {
-            setWgerSearchWarning(data.warning || "⚠ Wger unavailable. Showing local exercise catalog.");
+            setWgerSearchWarning(data.warning || (language === "id" ? "⚠ Wger tidak tersedia. Menampilkan katalog latihan lokal." : "⚠ Wger unavailable. Showing local exercise catalog."));
           } else {
             setWgerSearchWarning(null);
           }
         } else {
           setSuggestions([]);
-          setWgerSearchWarning("⚠ Wger unavailable. Showing local exercise catalog.");
+          setWgerSearchWarning(language === "id" ? "⚠ Wger tidak tersedia. Menampilkan katalog latihan lokal." : "⚠ Wger unavailable. Showing local exercise catalog.");
         }
       } catch (err) {
         console.error("Failed searching exercises:", err);
         setSuggestions([]);
-        setWgerSearchWarning("⚠ Wger unavailable. Showing local exercise catalog.");
+        setWgerSearchWarning(language === "id" ? "⚠ Wger tidak tersedia. Menampilkan katalog latihan lokal." : "⚠ Wger unavailable. Showing local exercise catalog.");
       } finally {
         setLoadingSearch(false);
       }
     }, 400);
 
     return () => clearTimeout(delayDebounce);
-  }, [searchQuery]);
+  }, [searchQuery, language]);
 
   const handleSelectExercise = (ex: any) => {
     setExerciseName(ex.name);
@@ -123,7 +125,7 @@ export default function LiveWorkouts({ profileId, onWorkoutLogged }: LiveWorkout
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!exerciseName.trim()) {
-      setSubmitFeedback({ success: false, msg: "Exercise name is required." });
+      setSubmitFeedback({ success: false, msg: language === "id" ? "Nama latihan harus diisi." : "Exercise name is required." });
       return;
     }
 
@@ -145,7 +147,7 @@ export default function LiveWorkouts({ profileId, onWorkoutLogged }: LiveWorkout
       if (result.success) {
         setSubmitFeedback({
           success: true,
-          msg: `Metabolic force registered! Recorded workout: ${exerciseName}`,
+          msg: language === "id" ? `Kekuatan metabolik terdaftar! Latihan tercatat: ${exerciseName}` : `Metabolic force registered! Recorded workout: ${exerciseName}`,
           xpEarned: result.xpEarned,
         });
 
@@ -166,7 +168,7 @@ export default function LiveWorkouts({ profileId, onWorkoutLogged }: LiveWorkout
     } catch (err: any) {
       setSubmitFeedback({
         success: false,
-        msg: err.message || "Failed to record workout session.",
+        msg: err.message || (language === "id" ? "Gagal mencatat sesi latihan." : "Failed to record workout session."),
       });
     } finally {
       setIsSubmitting(false);
@@ -174,6 +176,17 @@ export default function LiveWorkouts({ profileId, onWorkoutLogged }: LiveWorkout
   };
 
   const getCategoryLabel = (catId?: number): string => {
+    if (language === "id") {
+      switch (catId) {
+        case 10: return "Dada / Dorong";
+        case 8: return "Lengan / Hipertrofi Lengan";
+        case 9: return "Kaki / Kuadrisep";
+        case 12: return "Punggung / Tarik Vertikal";
+        case 11: return "Bahu";
+        case 14: return "Betis";
+        default: return "Seluruh Tubuh / Kompon";
+      }
+    }
     switch (catId) {
       case 10: return "Chest / Pushing";
       case 8: return "Arms / Arms Hypertrophy";
@@ -195,9 +208,9 @@ export default function LiveWorkouts({ profileId, onWorkoutLogged }: LiveWorkout
           </div>
           <div>
             <span className="text-[10px] font-bold text-amber-500 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/10 tracking-widest font-mono uppercase">
-              METABOLIC STRENGTH SYSTEM
+              {language === "id" ? "SISTEM KEKUATAN METABOLIK" : "METABOLIC STRENGTH SYSTEM"}
             </span>
-            <h2 className="text-xl md:text-2xl font-extrabold text-white mt-1">Warrior Compound Workouts</h2>
+            <h2 className="text-xl md:text-2xl font-extrabold text-white mt-1">{t("metabolicWorkoutsTitle")}</h2>
           </div>
         </div>
       </div>
@@ -207,18 +220,18 @@ export default function LiveWorkouts({ profileId, onWorkoutLogged }: LiveWorkout
         <div className="lg:col-span-7 bg-slate-950 border border-slate-900 rounded-2xl p-6 shadow-xl space-y-6">
           <h3 className="text-sm font-bold font-mono tracking-wider text-amber-400 uppercase border-b border-slate-900 pb-3 flex items-center gap-2">
             <Plus className="w-4 h-4 text-amber-500" />
-            <span>COMMENCE WORKOUT LOGGING</span>
+            <span>{language === "id" ? "MULAI PENCATATAN LATIHAN" : "COMMENCE WORKOUT LOGGING"}</span>
           </h3>
 
           {/* SUGGESTIVE LIBRARIES SEARCH */}
           <div className="space-y-2 relative">
             <label className="block text-[11px] font-mono uppercase text-slate-400">
-              Live Search Wger Exercise Library
+              {t("wgerSearchTitle")}
             </label>
             <div className="relative">
               <input
                 type="text"
-                placeholder="Type to search (e.g., Squats, Press, Curl)..."
+                placeholder={t("wgerSearchPlaceholder")}
                 value={searchQuery}
                 onChange={(e) => {
                   setSearchQuery(e.target.value);
@@ -236,13 +249,13 @@ export default function LiveWorkouts({ profileId, onWorkoutLogged }: LiveWorkout
             {loadingSearch && (
               <div className="text-[11px] text-amber-500 font-mono flex items-center gap-2 mt-1 animate-pulse" id="wger-searching-indicator">
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                <span>Searching Wger Exercise Database...</span>
+                <span>{t("wgerSearching")}</span>
               </div>
             )}
 
             {wgerSearchWarning && (
               <div className="bg-red-950/40 border border-red-500/20 text-red-400 text-[11px] font-mono p-3 rounded-xl flex items-start gap-2 mt-1 sm:items-center" id="wger-warning-indicator">
-                <div className="text-amber-500 shrink-0 font-bold">⚠️ Notice:</div>
+                <div className="text-amber-500 shrink-0 font-bold">{language === "id" ? "⚠️ Pemberitahuan:" : "⚠️ Notice:"}</div>
                 <div className="leading-tight">{wgerSearchWarning}</div>
               </div>
             )}
@@ -260,11 +273,11 @@ export default function LiveWorkouts({ profileId, onWorkoutLogged }: LiveWorkout
                     <div>
                       <div className="font-bold text-slate-200">{item.name}</div>
                       <div className="text-[10px] text-slate-500 font-mono mt-0.5">
-                        Category: {getCategoryLabel(item.category)}
+                        {language === "id" ? "Kategori: " : "Category: "}{getCategoryLabel(item.category)}
                       </div>
                     </div>
                     <span className="text-[10px] font-mono text-amber-500 bg-amber-500/5 px-2 py-0.5 rounded border border-amber-500/10 shrink-0">
-                      Select
+                      {language === "id" ? "Pilih" : "Select"}
                     </span>
                   </button>
                 ))}
@@ -273,7 +286,7 @@ export default function LiveWorkouts({ profileId, onWorkoutLogged }: LiveWorkout
 
             {showSuggestions && searchQuery.trim() && !loadingSearch && suggestions.length === 0 && (
               <div className="absolute top-[72px] inset-x-0 bg-slate-900 border border-slate-800 rounded-xl p-4 text-center shadow-2xl z-20 text-xs text-slate-400 font-mono" id="wger-no-results-indicator">
-                No matching exercises found.
+                {t("wgerNoResults")}
               </div>
             )}
           </div>
@@ -282,12 +295,12 @@ export default function LiveWorkouts({ profileId, onWorkoutLogged }: LiveWorkout
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <label className="block text-[11px] font-mono uppercase text-slate-400">
-                  Selected Exercise Name
+                  {t("exerciseNameLabel")}
                 </label>
                 <input
                   type="text"
                   required
-                  placeholder="Selected or manual input name..."
+                  placeholder={t("exerciseNamePlaceholder")}
                   value={exerciseName}
                   onChange={(e) => {
                     setExerciseName(e.target.value);
@@ -299,7 +312,7 @@ export default function LiveWorkouts({ profileId, onWorkoutLogged }: LiveWorkout
 
               <div className="space-y-2">
                 <label className="block text-[11px] font-mono uppercase text-slate-400">
-                  Target Date
+                  {language === "id" ? "Tanggal Target" : "Target Date"}
                 </label>
                 <div className="relative">
                   <input
@@ -313,10 +326,10 @@ export default function LiveWorkouts({ profileId, onWorkoutLogged }: LiveWorkout
               </div>
             </div>
 
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
               <div className="space-y-2">
-                <label className="block text-[11px] font-mono uppercase text-slate-400">
-                  Sets count
+                <label className="block text-[10px] sm:text-[11px] font-mono uppercase text-slate-400 whitespace-nowrap">
+                  {t("setsLabel")}
                 </label>
                 <input
                   type="number"
@@ -329,8 +342,8 @@ export default function LiveWorkouts({ profileId, onWorkoutLogged }: LiveWorkout
               </div>
 
               <div className="space-y-2">
-                <label className="block text-[11px] font-mono uppercase text-slate-400">
-                  Reps target
+                <label className="block text-[10px] sm:text-[11px] font-mono uppercase text-slate-400 whitespace-nowrap">
+                  {t("repsLabel")}
                 </label>
                 <input
                   type="number"
@@ -343,8 +356,8 @@ export default function LiveWorkouts({ profileId, onWorkoutLogged }: LiveWorkout
               </div>
 
               <div className="space-y-2">
-                <label className="block text-[11px] font-mono uppercase text-slate-400">
-                  Weight (KG)
+                <label className="block text-[10px] sm:text-[11px] font-mono uppercase text-slate-400 whitespace-nowrap">
+                  {t("weightKgLabel")}
                 </label>
                 <input
                   type="number"
@@ -357,8 +370,8 @@ export default function LiveWorkouts({ profileId, onWorkoutLogged }: LiveWorkout
               </div>
 
               <div className="space-y-2">
-                <label className="block text-[11px] font-mono uppercase text-slate-400">
-                  Duration (min)
+                <label className="block text-[10px] sm:text-[11px] font-mono uppercase text-slate-400 whitespace-nowrap">
+                  {t("durationMinutesLabel")}
                 </label>
                 <input
                   type="number"
@@ -373,10 +386,13 @@ export default function LiveWorkouts({ profileId, onWorkoutLogged }: LiveWorkout
 
             <div className="space-y-2">
               <label className="block text-[11px] font-mono uppercase text-slate-400">
-                Workout Insights / Notes
+                {t("workoutNotesLabel")}
               </label>
+              <span className="text-[10px] text-amber-500/80 font-bold block mb-1.5 font-mono">
+                {t("notesOptional")}
+              </span>
               <textarea
-                placeholder="How was the muscular recruitment? Describe lifting notes..."
+                placeholder={t("workoutNotesPlaceholder")}
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 rows={3}
@@ -416,12 +432,12 @@ export default function LiveWorkouts({ profileId, onWorkoutLogged }: LiveWorkout
               {isSubmitting ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin text-white" />
-                  <span>TRANSMITTING MUSCULAR RECORD...</span>
+                  <span>{t("loggingWorkoutButton")}</span>
                 </>
               ) : (
                 <>
                   <Zap className="w-4 h-4 text-white fill-current" />
-                  <span>REGISTER EXPEDITION WORKOUT (+60 XP)</span>
+                  <span>{t("logWorkoutButton")} (+60 XP)</span>
                 </>
               )}
             </button>
@@ -434,27 +450,27 @@ export default function LiveWorkouts({ profileId, onWorkoutLogged }: LiveWorkout
             <h3 className="text-sm font-bold font-mono tracking-wider text-amber-400 uppercase border-b border-slate-900 pb-3 flex items-center justify-between">
               <span className="flex items-center gap-2">
                 <Clock className="w-4 h-4 text-amber-500" />
-                <span>WORKOUT JOURNAL</span>
+                <span>{t("registeredWorkoutsHistory")}</span>
               </span>
               <span className="text-[10px] font-normal text-slate-500 font-mono normal-case">
-                {workoutHistory.length} entry{workoutHistory.length !== 1 ? "ies" : ""}
+                {workoutHistory.length} {language === "id" ? "entri" : "entries"}
               </span>
             </h3>
 
             {loadingHistory ? (
               <div className="flex flex-col items-center justify-center py-12 text-center space-y-2">
                 <Loader2 className="w-8 h-8 text-amber-500 animate-spin" />
-                <span className="text-xs text-slate-500 font-mono">LOADING SACRED SCROLLS...</span>
+                <span className="text-xs text-slate-500 font-mono">{language === "id" ? "MEMUAT DATA..." : "LOADING SACRED SCROLLS..."}</span>
               </div>
             ) : workoutHistory.length === 0 ? (
               <div className="text-center py-16 px-4 bg-slate-900/10 border-2 border-dashed border-slate-900 rounded-xl space-y-3">
                 <Dumbbell className="w-10 h-10 text-slate-700 mx-auto" />
                 <div>
                   <h4 className="text-xs font-bold font-mono text-slate-400 uppercase tracking-wider">
-                    NO WORKOUT JOURNAL ENTRIES
+                    {language === "id" ? "BELUM ADA JURNAL LATIHAN" : "NO WORKOUT JOURNAL ENTRIES"}
                   </h4>
                   <p className="text-[11px] text-slate-500 mt-1 max-w-[240px] mx-auto leading-relaxed">
-                    Log your first strength or hypertrophy session to earn a dynamic badge, claim XP, and back your challenges.
+                    {t("noWorkoutsRegistered")}
                   </p>
                 </div>
               </div>
@@ -472,9 +488,9 @@ export default function LiveWorkouts({ profileId, onWorkoutLogged }: LiveWorkout
                         </h4>
                         <div className="flex items-center gap-2 text-[10px] text-slate-400 font-mono mt-1">
                           <span className="text-amber-500 font-bold bg-amber-500/5 px-1.5 py-0.5 rounded border border-amber-500/15">
-                            {item.sets} Sets × {item.reps} Reps
+                            {item.sets} {language === "id" ? "Set" : "Sets"} × {item.reps} {language === "id" ? "Repetisi" : "Reps"}
                           </span>
-                          <span className="text-slate-500">at</span>
+                          <span className="text-slate-500">{language === "id" ? "pada" : "at"}</span>
                           <span className="text-slate-200 font-bold">{item.weightKg} KG</span>
                         </div>
                       </div>
@@ -493,7 +509,7 @@ export default function LiveWorkouts({ profileId, onWorkoutLogged }: LiveWorkout
                     <div className="flex items-center justify-between text-[10px] font-mono text-slate-500 pt-1 border-t border-slate-900/50">
                       <div className="flex items-center gap-1">
                         <Clock className="w-3.5 h-3.5 text-slate-600" />
-                        <span>{item.durationMinutes} minutes duration</span>
+                        <span>{item.durationMinutes} {language === "id" ? "menit durasi" : "minutes duration"}</span>
                       </div>
                       <div className="flex items-center gap-0.5 text-amber-500 font-bold uppercase text-[9px]">
                         <Zap className="w-3 h-3 fill-current" />
