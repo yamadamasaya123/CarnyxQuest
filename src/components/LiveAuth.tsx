@@ -27,7 +27,7 @@ export default function LiveAuth({ onAuthSuccess }: LiveAuthProps) {
     try {
       if (isLogin) {
         // Pass email and password coordinates to real Supabase auth
-        const res = await db.login(email, password);
+        const res = await db.login(email, password, displayName);
         if (res.success) {
           onAuthSuccess();
         } else {
@@ -94,8 +94,8 @@ export default function LiveAuth({ onAuthSuccess }: LiveAuthProps) {
         <p className="text-xs text-amber-200/60 max-w-md mx-auto font-sans">
           {isLogin
             ? (language === "id"
-                ? "Masuk kembali ke domain perjanjian daging suci dan pantau penyerangan metabolik Anda."
-                : "Re-enter the sacred meat-covenant domains and monitor your metabolic raids.")
+                ? "Masuklah kembali ke wilayah suci dan pantau aktivitas metabolisme Anda."
+                : "Re-enter the sacred domains and monitor your metabolic raids.")
             : (language === "id"
                 ? "Perjalanan Anda dimulai sebagai Chieftain. Hubungkan koordinat Anda dan nyalakan bara puasa Anda."
                 : "Your journey begins as a Chieftain. Establish your coordinates and ignite your fasting embers.")}
@@ -225,7 +225,7 @@ export default function LiveAuth({ onAuthSuccess }: LiveAuthProps) {
               <span>
                 {isLogin
                   ? (language === "id" ? "Akses Profil" : "Access Profile")
-                  : (language === "id" ? "Nyalakan Jantung Primal" : "Ignite Primal Heart")}
+                  : (language === "id" ? "Buat Primal ID" : "Create Primal ID")}
               </span>
             </span>
           )}
@@ -242,8 +242,8 @@ export default function LiveAuth({ onAuthSuccess }: LiveAuthProps) {
             className="text-amber-400 hover:text-amber-300 text-xs font-mono underline cursor-pointer"
           >
             {isLogin
-              ? (language === "id" ? "Belum punya garis keturunan suku? Mulai perjanjian di sini" : "No tribal lineage yet? Initiate covenant here")
-              : (language === "id" ? "Kembali ke Gerbang Id Primal" : "Return to Primal Id Gateway")}
+              ? (language === "id" ? "Belum punya Primal ID? Buat Primal ID Anda di sini" : "No Primal ID yet? Create your Primal ID here")
+              : (language === "id" ? "Kembali ke Akses Primal ID" : "Return to Primal ID Access")}
           </button>
         </div>
       </form>

@@ -266,7 +266,7 @@ export default function LiveFasting({ profileId, onFastingComplete }: LiveFastin
         <div className="flex items-center gap-2 border-b border-slate-900 pb-3">
           <Clock className="w-5 h-5 text-amber-500" />
           <h3 className="text-sm font-bold uppercase tracking-wider font-mono text-amber-400">
-            {language === "id" ? "Gerbang Autofagi Metabolik" : "Metabolic Autophagy Gateway"}
+            {language === "id" ? "Autofagi Metabolik" : "Metabolic Autophagy"}
           </h3>
         </div>
 

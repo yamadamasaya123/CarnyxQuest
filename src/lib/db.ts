@@ -1011,11 +1011,90 @@ class SupabaseDB {
     return { profile: newProfile, success: true };
   }
 
-  public async login(email: string, password?: string): Promise<{ profile: UserProfile | null; success: boolean; error?: string }> {
-    // In CarnyxQuest UI flow, login relies on email and optional password, but often the username/moniker is sent. 
-    // Let's resolve the user's registered email since the user could log in using their registered credentials.
-    // If we only get a username, we lookup user by username first:
+  public async login(email: string, password?: string, username?: string): Promise<{ profile: UserProfile | null; success: boolean; error?: string }> {
     let loginEmail = email.toLowerCase().trim();
+    const finalPass = password || "tribalpassword123";
+
+    if (username && username.trim() !== "") {
+      const { data: userProfile, error: profileErr } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('display_name', username.trim())
+        .maybeSingle();
+
+      if (profileErr || !userProfile) {
+        return { profile: null, success: false, error: "Invalid login credentials" };
+      }
+
+      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+        email: loginEmail,
+        password: finalPass
+      });
+
+      if (authError) {
+        const isRateLimit = (msg: string): boolean => {
+          const norm = (msg || "").toLowerCase();
+          return norm.includes("rate limit") || norm.includes("rate_limit") || norm.includes("too many requests") || (norm.includes("exceeded") && norm.includes("email"));
+        };
+        if (isRateLimit(authError.message)) {
+          return {
+            profile: null,
+            success: false,
+            error: "Login is temporarily rate-limited. Please try again later."
+          };
+        }
+        return { profile: null, success: false, error: "Invalid login credentials" };
+      }
+
+      if (authData.user) {
+        if (authData.user.id !== userProfile.id) {
+          await supabase.auth.signOut();
+          return { profile: null, success: false, error: "Invalid login credentials" };
+        }
+
+        const { data: profile } = await supabase.from('profiles').select('*').eq('id', authData.user.id).maybeSingle();
+        if (profile) {
+          localStorage.setItem("carnyx_active_user_id", authData.user.id);
+          localStorage.setItem("carnyx_active_user_email", authData.user.email || "");
+          return { profile: mapProfile(profile), success: true };
+        } else {
+          const fallbackProfile: UserProfile = {
+            id: authData.user.id,
+            displayName: username.trim(),
+            primalClass: PrimalClass.Chieftain,
+            level: 1,
+            experience: 0,
+            goldPoints: 100,
+            createdAt: new Date().toISOString(),
+          };
+
+          await supabase.from('profiles').insert({
+            id: fallbackProfile.id,
+            display_name: fallbackProfile.displayName,
+            primal_class: fallbackProfile.primalClass,
+            level: fallbackProfile.level,
+            experience: fallbackProfile.experience,
+            gold_points: fallbackProfile.goldPoints,
+          });
+
+          const { data: str } = await supabase.from('streaks').select('*').eq('profile_id', fallbackProfile.id).maybeSingle();
+          if (!str) {
+            await supabase.from('streaks').insert({
+              profile_id: fallbackProfile.id,
+              current_streak: 0,
+              longest_streak: 0,
+              marrow_shields_active: 1
+            });
+          }
+
+          localStorage.setItem("carnyx_active_user_id", fallbackProfile.id);
+          localStorage.setItem("carnyx_active_user_email", authData.user.email || "");
+          return { profile: mapProfile(fallbackProfile), success: true };
+        }
+      }
+      return { profile: null, success: false, error: "Invalid login credentials" };
+    }
+
     if (!email.includes("@")) {
       const { data: userProfile } = await supabase.from('profiles').select('*').eq('display_name', email).maybeSingle();
       if (!userProfile) {
@@ -1023,7 +1102,6 @@ class SupabaseDB {
       }
     }
 
-    const finalPass = password || "tribalpassword123";
     const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
       email: loginEmail,
       password: finalPass
@@ -1051,7 +1129,6 @@ class SupabaseDB {
         localStorage.setItem("carnyx_active_user_email", authData.user.email || "");
         return { profile: mapProfile(profile), success: true };
       } else {
-        // Recovery mechanism if user profile row is missing
         const fallbackProfile: UserProfile = {
           id: authData.user.id,
           displayName: loginEmail.split("@")[0] || "TribeMember",

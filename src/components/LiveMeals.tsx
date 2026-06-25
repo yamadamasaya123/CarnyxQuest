@@ -32,9 +32,9 @@ export default function LiveMeals({ profileId, onLoggedSuccess, onSuccessNotific
   const [isCarbZero, setIsCarbZero] = useState<boolean>(true);
 
   // Nutritional values derived or entered
-  const [calories, setCalories] = useState<number>(291);
-  const [proteinGrams, setProteinGrams] = useState<number>(24);
-  const [fatGrams, setFatGrams] = useState<number>(22);
+  const [calories, setCalories] = useState<number>(0);
+  const [proteinGrams, setProteinGrams] = useState<number>(0);
+  const [fatGrams, setFatGrams] = useState<number>(0);
 
   // Search states
   const [usdaSearchQuery, setUsdaSearchQuery] = useState<string>("");
@@ -149,6 +149,9 @@ export default function LiveMeals({ profileId, onLoggedSuccess, onSuccessNotific
       setFoodNameInput("");
       setNotes("");
       setWeightGramsInput("100");
+      setCalories(0);
+      setProteinGrams(0);
+      setFatGrams(0);
     } catch (err: any) {
       alert((language === "id" ? "Gagal mencatat data makanan: " : "Error logging meal resources: ") + err.message);
     } finally {
@@ -281,31 +284,31 @@ export default function LiveMeals({ profileId, onLoggedSuccess, onSuccessNotific
           {/* DYNAMIC NUTRITION FIELDS */}
           <div className="bg-slate-900/60 border border-slate-800 rounded-xl p-4">
             <h4 className="text-[11px] uppercase font-bold tracking-wider text-slate-400 mb-3 font-mono">
-              {language === "id" ? "Estimasi Telemetri Nutrisi (Per Porsi Terpilih)" : "Estimated Nutritional Telemetry (Per Selected Portion)"}
+              {language === "id" ? "Data Estimasi Nutrisi (Per Porsi Terpilih)" : "Estimated Nutritional Data (Per Selected Portion)"}
             </h4>
             <div className="grid grid-cols-3 gap-2 text-center">
               <div className="bg-slate-950 p-2.5 rounded-xl border border-slate-800">
                 <div className="text-md md:text-xl font-mono font-extrabold text-amber-500">
-                  {Math.round((calories * weightGrams) / 100)}
+                  {Math.round((calories * weightGrams) / 100)} kCal
                 </div>
                 <div className="text-[9px] uppercase tracking-wider text-slate-500 font-semibold font-mono">
-                  {language === "id" ? "Kalori (kCal)" : "Calories (kCal)"}
+                  {language === "id" ? "Kalori" : "Calories"}
                 </div>
               </div>
               <div className="bg-slate-950 p-2.5 rounded-xl border border-slate-800">
                 <div className="text-md md:text-xl font-mono font-extrabold text-red-400">
-                  {Math.round((proteinGrams * weightGrams) / 100)}g
+                  {Math.round((proteinGrams * weightGrams) / 100)} g
                 </div>
                 <div className="text-[9px] uppercase tracking-wider text-slate-500 font-semibold font-mono">
-                  {language === "id" ? "Protein" : "Prot Protein"}
+                  Protein
                 </div>
               </div>
               <div className="bg-slate-950 p-2.5 rounded-xl border border-slate-800">
                 <div className="text-md md:text-xl font-mono font-extrabold text-orange-400">
-                  {Math.round((fatGrams * weightGrams) / 100)}g
+                  {Math.round((fatGrams * weightGrams) / 100)} g
                 </div>
                 <div className="text-[9px] uppercase tracking-wider text-slate-500 font-semibold font-mono">
-                  {language === "id" ? "Lemak" : "Fat Lipid"}
+                  {language === "id" ? "Lemak" : "Fat"}
                 </div>
               </div>
             </div>

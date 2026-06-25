@@ -27,6 +27,40 @@ interface LiveDashboardProps {
   onCheckInSuccess: (xpEarned: number, leveledUp: boolean) => void;
 }
 
+const translateSource = (source: string, lang: string): string => {
+  if (lang !== "id") return source;
+  
+  let s = source || "";
+  if (s === "daily_checkin" || s === "Ritual Coordination") return "Pemeriksaan Harian";
+  if (s === "challenge_completed") return "Tantangan Selesai";
+  if (s === "fast_completed") return "Puasa Selesai";
+  if (s === "workout_logged") return "Latihan Dicatat";
+  
+  if (s.startsWith("Logged Workout: ")) {
+    return "Latihan Dicatat: " + s.substring("Logged Workout: ".length);
+  }
+  if (s.startsWith("Logged Meal: ")) {
+    return "Makanan Dicatat: " + s.substring("Logged Meal: ".length);
+  }
+  if (s.startsWith("Logged Prey: ")) {
+    return "Mangsa Dicatat: " + s.substring("Logged Prey: ".length);
+  }
+  if (s.startsWith("Fast Completed: ")) {
+    return "Puasa Selesai: " + s.substring("Fast Completed: ".length);
+  }
+  if (s.startsWith("Challenge Completed: ")) {
+    return "Tantangan Selesai: " + s.substring("Challenge Completed: ".length);
+  }
+  if (s.startsWith("Unlocked Trophy: ")) {
+    return "Trofi Terbuka: " + s.substring("Unlocked Trophy: ".length);
+  }
+  if (s === "Autophagic Embers Sparked") {
+    return "Bara Autofagi Dinyalakan";
+  }
+  
+  return s;
+};
+
 export default function LiveDashboard({
   profileId,
   onRefreshMetricsTrigger,
@@ -150,8 +184,8 @@ export default function LiveDashboard({
         } else {
           onSuccessNotification(
             language === "id"
-              ? "Ritual pemeriksaan harian berhasil diselesaikan! Beruntun bertambah."
-              : "Daily check-in ritual completed successfully! Current streak incremented."
+              ? "Ritual pemeriksaan harian berhasil diselesaikan!"
+              : "Daily check-in ritual completed successfully!"
           );
         }
 
@@ -193,11 +227,11 @@ export default function LiveDashboard({
               </div>
 
               <div className="space-y-1">
-                <div className="flex items-center gap-2">
-                  <h3 className="text-xl font-bold tracking-tight text-white font-sans">
+                <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+                  <h3 className="text-xl font-bold tracking-tight text-white font-sans whitespace-nowrap">
                     {profile.displayName}
                   </h3>
-                  <span className="bg-amber-500/10 text-amber-400 border border-amber-500/20 text-[9.5px] font-mono font-bold px-1.5 py-0.5 rounded">
+                  <span className="bg-amber-500/10 text-amber-400 border border-amber-500/20 text-[9.5px] font-mono font-bold px-2 py-0.5 rounded flex items-center justify-center text-center whitespace-nowrap h-fit min-h-[22px] self-center">
                     {language === "id" ? "KELAS: " : "CLASS: "}{profile.primalClass.toUpperCase()}
                   </span>
                 </div>
@@ -259,15 +293,15 @@ export default function LiveDashboard({
 
         {/* DAILY REVIEW CHECK-IN FORM */}
         <div className="bg-slate-950 p-5 rounded-2xl border border-slate-900 relative">
-          <div className="flex items-center justify-between border-b border-slate-900 pb-3 mb-4">
-            <h4 className="text-xs font-bold font-mono tracking-widest text-slate-400 uppercase flex items-center gap-2">
-              <CalendarCheck className="w-4 h-4 text-amber-500" />
-              {t("sacredCheckinRitual")}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 border-b border-slate-900 pb-3 mb-4">
+            <h4 className="text-xs font-bold font-mono tracking-widest text-slate-400 uppercase flex items-center justify-center sm:justify-start gap-2">
+              <CalendarCheck className="w-4 h-4 text-amber-500 shrink-0" />
+              <span>{t("sacredCheckinRitual")}</span>
             </h4>
 
             {isCheckedInToday && (
-              <span className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[9.5px] font-mono font-bold px-2 py-0.5 rounded flex items-center gap-1">
-                <CircleCheck className="w-3 h-3" />
+              <span className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[9.5px] font-mono font-bold px-2 py-0.5 rounded flex items-center justify-center text-center whitespace-nowrap gap-1 min-h-[22px] self-center sm:self-auto">
+                <CircleCheck className="w-3.5 h-3.5 shrink-0" />
                 <span>{t("checkedInToday")}</span>
               </span>
             )}
@@ -276,20 +310,20 @@ export default function LiveDashboard({
           {isCheckedInToday ? (
             <div className="p-4 bg-emerald-950/10 border border-emerald-500/10 rounded-xl space-y-2 text-xs">
               <p className="text-slate-300 font-semibold">
-                {language === "id" ? "Komuni Telah Dipastikan untuk “Yawning Twilight”!" : "Communion Secured for Yawning Twilight!"}
+                {language === "id" ? "Ritual telah dilaksanakan!" : "Ritual has been communed!"}
               </p>
               <p className="text-slate-400 text-[11px] leading-relaxed">
                 {language === "id"
-                  ? "Data biologis Anda, parameter pelestarian kultur, dan target makronutrien telah disinkronkan. Lanjutkan mencatat konsumsi daging atau aktifkan pengatur waktu autofagi untuk memaksimalkan keuntungan dari program Pathfinder."
-                  : "Your biological data, streak preservation parameters, and macronutrient targets have been coordinated. Continue logging meats or activate the autophagy timer to maximize pathfinder gains."}
+                  ? "Data biologis dan rekor primal beruntun Anda telah disinkronkan. Lanjutkan mencatat asupan daging atau aktifkan pengatur waktu autofagi untuk memaksimalkan peningkatan kemampuan Pathfinder."
+                  : "Your biological data and primal streak have been synchronized. Continue logging meats or activate the autophagy timer to maximize pathfinder gains."}
               </p>
             </div>
           ) : (
             <form onSubmit={handleCheckInSubmit} className="space-y-4">
               <p className="text-[11px] text-slate-500">
                 {language === "id"
-                  ? "Segel konsistensi biometrik harian Anda untuk mengamankan titik pemeriksaan harian dan melindungi rekor beruntun Anda. Memasukkan catatan memberikan perkembangan Jalur khusus."
-                  : "Seal your day's biometric consistency to secure checking points and insulate your streaks. Entering notes awards custom Path progression."}
+                  ? "Check-in untuk simpan streak harian dan raih poin. Tambahkan catatan singkat agar lebih termotivasi dan progres makin cepat!"
+                  : "Check in to save your daily streak and earn points. Feel free to add a quick note to motivate your day and speed up your progress!"}
               </p>
               <div className="space-y-1.5">
                 <span className="text-[10px] text-amber-500/80 font-bold block font-mono">
@@ -351,7 +385,7 @@ export default function LiveDashboard({
         {/* BIOMETRIC STREAK PANEL */}
         <div className="bg-slate-950 p-5 rounded-2xl border border-amber-900/20 relative space-y-4">
           <h4 className="text-[11px] font-bold font-mono tracking-widest text-slate-400 uppercase border-b border-slate-900 pb-2.5">
-            {language === "id" ? "Telemetri Beruntun Primal" : "Primal Streak Telemetry"}
+            {language === "id" ? "REKOR PRIMAL BERUNTUN" : "PRIMAL STREAK"}
           </h4>
 
           <div className="grid grid-cols-2 gap-3 text-center">
@@ -390,7 +424,7 @@ export default function LiveDashboard({
             {/* Shield Progress Bar */}
             <div className="space-y-1">
               <div className="flex justify-between items-center text-[10px] font-mono">
-                <span className="text-slate-500">{language === "id" ? "Kemajuan Perisai:" : "Shield Progress:"}</span>
+                <span className="text-slate-500">{language === "id" ? "Progres Perisai:" : "Shield Progress:"}</span>
                 <span className="text-amber-500 font-bold">{streak.shieldProgressPercent ?? 0}%</span>
               </div>
               <div className="w-full bg-slate-950 rounded-full h-1.5 overflow-hidden">
@@ -452,15 +486,7 @@ export default function LiveDashboard({
                 <div key={t.id} className="text-[11px] flex justify-between items-start gap-2 font-mono">
                   <div className="space-y-0.5">
                     <span className="text-slate-300 block">
-                      {t.source === "daily_checkin" 
-                        ? (language === "id" ? "Pemeriksaan Harian" : "Daily Check-In") 
-                        : t.source === "challenge_completed" 
-                        ? (language === "id" ? "Tantangan Selesai" : "Challenge Completed") 
-                        : t.source === "fast_completed" 
-                        ? (language === "id" ? "Puasa Selesai" : "Fast Completed") 
-                        : t.source === "workout_logged"
-                        ? (language === "id" ? "Latihan Dicatat" : "Workout Logged")
-                        : t.source}
+                      {translateSource(t.source, language)}
                     </span>
                     <span className="text-[9px] text-slate-500 block">
                       {new Date(t.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
@@ -488,72 +514,72 @@ export default function LiveDashboard({
                 Gold Points (GP)
               </h3>
               <p className="text-[10px] uppercase font-mono tracking-wider text-slate-500">
-                Progression Currency & Streak Protection
+                {language === "id" ? "Mata Uang Progres & Perlindungan Beruntun" : "Progression Currency & Streak Protection"}
               </p>
             </div>
 
             <div className="text-left space-y-3.5 bg-slate-950 p-4 rounded-xl border border-slate-850/60 font-sans text-xs text-slate-300 leading-relaxed max-h-[60vh] overflow-y-auto">
               <div>
                 <p className="font-bold text-amber-400 mb-1 font-mono uppercase tracking-wider text-[10px]">
-                  GP is earned through:
+                  {language === "id" ? "GP didapatkan melalui:" : "GP is earned through:"}
                 </p>
                 <ul className="space-y-1 text-slate-400 text-[11px]">
                   <li className="flex items-start gap-1">
                     <span className="text-amber-500">•</span>
-                    <span>Leveling Up</span>
+                    <span>{language === "id" ? "Kenaikan Level" : "Leveling Up"}</span>
                   </li>
                   <li className="flex items-start gap-1">
                     <span className="text-amber-500">•</span>
-                    <span>Completing Challenges</span>
+                    <span>{language === "id" ? "Menyelesaikan Tantangan" : "Completing Challenges"}</span>
                   </li>
                   <li className="flex items-start gap-1">
                     <span className="text-amber-500">•</span>
-                    <span>Unlocking Achievements</span>
+                    <span>{language === "id" ? "Membuka Pencapaian" : "Unlocking Achievements"}</span>
                   </li>
                   <li className="flex items-start gap-1">
                     <span className="text-amber-500">•</span>
-                    <span>Major Progression Milestones</span>
+                    <span>{language === "id" ? "Pencapaian Progres Utama" : "Major Progression Milestones"}</span>
                   </li>
                 </ul>
               </div>
 
               <div className="border-t border-slate-900 pt-2.5">
                 <p className="font-bold text-amber-400 mb-1 font-mono uppercase tracking-wider text-[10px]">
-                  GP can be spent on:
+                  {language === "id" ? "GP dapat dibelanjakan untuk:" : "GP can be spent on:"}
                 </p>
                 <ul className="space-y-1 text-slate-400 text-[11px]">
                   <li className="flex items-start gap-1">
                     <span className="text-amber-500">•</span>
-                    <span>Marrow Shield Protectors</span>
+                    <span>{language === "id" ? "Pelindung Perisai Sumsum" : "Marrow Shield Protectors"}</span>
                   </li>
                   <li className="flex items-start gap-1">
                     <span className="text-amber-500">•</span>
-                    <span>Future Progression Rewards</span>
+                    <span>{language === "id" ? "Hadiah Progres Masa Depan" : "Future Progression Rewards"}</span>
                   </li>
                 </ul>
               </div>
 
               <div className="border-t border-slate-900 pt-2.5">
                 <p className="font-bold text-amber-400 mb-1 font-mono uppercase tracking-wider text-[10px]">
-                  Marrow Shield Cost:
+                  {language === "id" ? "Biaya Perisai Sumsum:" : "Marrow Shield Cost:"}
                 </p>
                 <p className="text-slate-400 text-[11px] font-mono font-semibold">
-                  80 GP per Shield
+                  {language === "id" ? "80 GP per Perisai" : "80 GP per Shield"}
                 </p>
               </div>
 
               <div className="border-t border-slate-900 pt-2.5">
                 <p className="font-bold text-amber-400 mb-1 font-mono uppercase tracking-wider text-[10px]">
-                  Marrow Shields protect streaks from:
+                  {language === "id" ? "Perisai Sumsum melindungi rekor beruntun dari:" : "Marrow Shields protect streaks from:"}
                 </p>
                 <ul className="space-y-1 text-slate-400 text-[11px]">
                   <li className="flex items-start gap-1">
                     <span className="text-amber-500">•</span>
-                    <span>Carb Slippage</span>
+                    <span>{language === "id" ? "Kecolongan Karbohidrat" : "Carb Slippage"}</span>
                   </li>
                   <li className="flex items-start gap-1">
                     <span className="text-amber-500">•</span>
-                    <span>Missed Daily Check-ins</span>
+                    <span>{language === "id" ? "Absen Pemeriksaan Harian" : "Missed Daily Check-ins"}</span>
                   </li>
                 </ul>
               </div>
@@ -563,7 +589,7 @@ export default function LiveDashboard({
               onClick={() => setShowGpModal(false)}
               className="w-full bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white font-mono font-bold py-2.5 rounded-xl text-xs cursor-pointer tracking-wider border border-slate-700 transition"
             >
-              DISMISS
+              {language === "id" ? "TUTUP" : "DISMISS"}
             </button>
           </div>
         </div>
