@@ -1296,8 +1296,9 @@ class SupabaseDB {
 
     // 3. Increment challenge progress for active workout challenges
     try {
-      const lvl2LeveledUp = await this.evaluateLevel2Challenges(profileId, 'workout');
-      if (lvl2LeveledUp) {
+      const lvl2Result = await this.evaluateLevel2Challenges(profileId, 'workout');
+      totalXpEarned += lvl2Result.xpEarned;
+      if (lvl2Result.leveledUp) {
         combinedLeveledUp = true;
       }
     } catch (challErr) {
@@ -1404,8 +1405,9 @@ class SupabaseDB {
     }
 
     // Evaluate Level 2 challenges
-    const lvl2LeveledUp = await this.evaluateLevel2Challenges(profileId, 'meal', { isCarbZero: item.isCarbZero });
-    if (lvl2LeveledUp) {
+    const lvl2Result = await this.evaluateLevel2Challenges(profileId, 'meal', { isCarbZero: item.isCarbZero });
+    totalXpEarned += lvl2Result.xpEarned;
+    if (lvl2Result.leveledUp) {
       combinedLeveledUp = true;
     }
 
@@ -1476,7 +1478,7 @@ class SupabaseDB {
     profileId: string,
     triggerType: 'meal' | 'fast' | 'checkin' | 'workout',
     details?: { isCarbZero?: boolean; meetsTarget?: boolean }
-  ): Promise<boolean> {
+  ): Promise<{ leveledUp: boolean; xpEarned: number }> {
     try {
       // 1. Fetch active enrollments for Level 2 or higher database challenges
       const { data: activeEnrollments, error } = await supabase
@@ -1486,10 +1488,11 @@ class SupabaseDB {
         .eq('status', ChallengeStatus.Active);
         
       if (error || !activeEnrollments || activeEnrollments.length === 0) {
-        return false;
+        return { leveledUp: false, xpEarned: 0 };
       }
 
       let leveledUp = false;
+      let totalXpEarned = 0;
 
       for (const uc of activeEnrollments) {
         // Fetch the corresponding challenge metadata from challenges table
@@ -1553,6 +1556,7 @@ class SupabaseDB {
                   source: challengeTxSource,
                   xp_amount: chXp,
                 });
+                totalXpEarned += chXp;
 
                 // Award shield progress reward! Each completed quest should add shield progress percent
                 await this.incrementShieldProgress(profileId, challenge.shield_reward_percent ?? 25);
@@ -1568,10 +1572,10 @@ class SupabaseDB {
         }
       }
 
-      return leveledUp;
+      return { leveledUp, xpEarned: totalXpEarned };
     } catch (e) {
       console.error("[DEBUG] Error evaluating Level 2 challenges:", e);
-      return false;
+      return { leveledUp: false, xpEarned: 0 };
     }
   }
 
@@ -1704,8 +1708,9 @@ class SupabaseDB {
     }
 
     // Evaluate Level 2 challenges
-    const lvl2LeveledUp = await this.evaluateLevel2Challenges(profileId, 'checkin');
-    if (lvl2LeveledUp) {
+    const lvl2Result = await this.evaluateLevel2Challenges(profileId, 'checkin');
+    xpEarnings += lvl2Result.xpEarned;
+    if (lvl2Result.leveledUp) {
       leveledUp = true;
     }
 
@@ -2013,8 +2018,9 @@ class SupabaseDB {
 
       // Evaluate Level 2 fasting challenges
       try {
-        const lvl2LeveledUp = await this.evaluateLevel2Challenges(profileId, 'fast', { meetsTarget });
-        if (lvl2LeveledUp) {
+        const lvl2Result = await this.evaluateLevel2Challenges(profileId, 'fast', { meetsTarget });
+        xpEarned += lvl2Result.xpEarned;
+        if (lvl2Result.leveledUp) {
           leveledUp = true;
         }
       } catch (err) {
