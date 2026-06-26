@@ -491,22 +491,24 @@ function mapUserBadge(ub: any): UserBadge {
   };
 }
 
-// Automatic Auxiliary Seeder to seed challenges and badges if missing
-async function seedHelperTables() {
+// Developer utility to seed challenges and badges if missing.
+// This is NOT executed automatically to avoid RLS permission denied errors in production.
+export async function runCarnyxSeeder(verbose = true) {
   try {
-    console.log("[DEBUG] Running robust seedHelperTables...");
+    if (verbose) console.log("[DEVELOPER SEEDER] Running robust seedHelperTables...");
     
     // 1. Seed Challenges
     const { data: dbChallenges, error: chErr } = await supabase.from('challenges').select('*');
     if (chErr) {
-      console.error("[DEBUG] Error querying challenges for seeding:", chErr);
+      if (verbose) console.error("[DEVELOPER SEEDER] Error querying challenges for seeding:", chErr);
+      return;
     }
     
     for (const c of DEFAULT_CHALLENGES) {
       const mappedId = CHALLENGE_ID_MAP[c.id];
       const exists = dbChallenges?.some(dbc => dbc.id === mappedId || dbc.title.toLowerCase() === c.title.toLowerCase());
       if (!exists) {
-        console.log(`[DEBUG] Challenge '${c.title}' is missing. Seeding...`);
+        if (verbose) console.log(`[DEVELOPER SEEDER] Challenge '${c.title}' is missing. Seeding...`);
         const { error: chInsErr } = await supabase.from('challenges').insert({
           id: mappedId,
           title: c.title,
@@ -514,8 +516,8 @@ async function seedHelperTables() {
           duration_days: c.durationDays,
           reward_xp: c.rewardXp
         });
-        if (chInsErr) {
-          console.error(`[DEBUG] Failed to seed challenge '${c.title}':`, chInsErr);
+        if (chInsErr && verbose) {
+          console.error(`[DEVELOPER SEEDER] Failed to seed challenge '${c.title}':`, chInsErr);
         }
       }
     }
@@ -523,14 +525,15 @@ async function seedHelperTables() {
     // 2. Seed Badges
     const { data: dbBadges, error: bdErr } = await supabase.from('badges').select('*');
     if (bdErr) {
-      console.error("[DEBUG] Error querying badges for seeding:", bdErr);
+      if (verbose) console.error("[DEVELOPER SEEDER] Error querying badges for seeding:", bdErr);
+      return;
     }
 
     for (const b of DEFAULT_BADGES) {
       const mappedId = BADGE_ID_MAP[b.id];
       const exists = dbBadges?.some(db_b => db_b.id === mappedId || db_b.name.toLowerCase() === b.name.toLowerCase());
       if (!exists) {
-        console.log(`[DEBUG] Badge '${b.name}' is missing. Seeding...`);
+        if (verbose) console.log(`[DEVELOPER SEEDER] Badge '${b.name}' is missing. Seeding...`);
         const { error: bdInsErr } = await supabase.from('badges').insert({
           id: mappedId,
           name: b.name,
@@ -538,29 +541,29 @@ async function seedHelperTables() {
           requirement: b.requirement,
           reward_xp: b.rewardXp
         });
-        if (bdInsErr) {
-          console.error(`[DEBUG] Failed to seed badge '${b.name}':`, bdInsErr);
+        if (bdInsErr && verbose) {
+          console.error(`[DEVELOPER SEEDER] Failed to seed badge '${b.name}':`, bdInsErr);
         }
       }
     }
-    console.log("[DEBUG] Robust seedHelperTables completed successfully.");
+    if (verbose) console.log("[DEVELOPER SEEDER] Robust seedHelperTables completed successfully.");
   } catch (err) {
-    console.warn("[DEBUG] Seeding auxiliary tables issue:", err);
+    if (verbose) console.warn("[DEVELOPER SEEDER] Seeding auxiliary tables issue:", err);
   }
+}
+
+if (typeof window !== "undefined") {
+  (window as any).runCarnyxSeeder = runCarnyxSeeder;
 }
 
 // Supabase DB client driver implementing same signatures asynchronously
 class SupabaseDB {
   constructor() {
-    // Seed helper tables asynchronously in background
-    seedHelperTables();
+    // Seeding is now a manual developer utility to prevent production console permission errors
   }
 
   public async getDbBadgeId(localBadgeId: string): Promise<string | null> {
     try {
-      // Ensure seeding helper runs and is completed
-      await seedHelperTables();
-
       const localBadge = DEFAULT_BADGES.find(b => b.id === localBadgeId);
       const searchRequirement = localBadge ? localBadge.requirement : localBadgeId;
 
@@ -604,23 +607,9 @@ class SupabaseDB {
         }
       }
 
-      // If we still can't find it and we have a localBadge, we can fall back or seed it
+      // If we still can't find it and we have a localBadge, we fall back to mapped ID
       if (localBadge) {
-        console.log(`[DEBUG] Badge '${localBadge.name}' not found. Seeding on-demand...`);
         const mappedId = BADGE_ID_MAP[localBadgeId];
-        const { error: insertErr } = await supabase.from('badges').insert({
-          id: mappedId,
-          name: localBadge.name,
-          description: localBadge.description,
-          requirement: localBadge.requirement,
-          reward_xp: localBadge.rewardXp
-        });
-
-        if (insertErr) {
-          console.error(`[DEBUG] Error force-seeding missing badge '${localBadge.name}':`, insertErr);
-        } else {
-          console.log(`[DEBUG] Successfully force-seeded missing badge '${localBadge.name}' to ID '${mappedId}'`);
-        }
         return mappedId || null;
       }
 
@@ -662,9 +651,6 @@ class SupabaseDB {
       }
 
       // 4. Resolve DB Badge row directly from public.badges
-      // Ensure helper table seeds if necessary
-      await seedHelperTables();
-
       const { data: dbBadges, error: errQuery } = await supabase.from('badges').select('*');
       if (errQuery) {
         console.warn("[DEBUG] Error querying public.badges:", errQuery);
@@ -701,25 +687,17 @@ class SupabaseDB {
 
       // If we don't have this badge in public.badges, let's look at DEFAULT_BADGES
       if (!dbBadge) {
-        // Check if there is a local badge definition to seed on the fly
+        // Check if there is a local badge definition to fall back to
         const localBadge = DEFAULT_BADGES.find(b => b.id === criteria || b.requirement === criteria);
         if (localBadge) {
-          console.log(`[DEBUG] Missing badge '${localBadge.name}' in DB. Seeding on-demand...`);
           const mappedId = BADGE_ID_MAP[localBadge.id] || BADGE_ID_MAP[criteria] || "b1110000-0000-0000-0000-000000000099";
-          const { data: insertedBadge, error: insertErr } = await supabase.from('badges').insert({
+          dbBadge = {
             id: mappedId,
             name: localBadge.name,
             description: localBadge.description,
             requirement: localBadge.requirement,
             reward_xp: localBadge.rewardXp
-          }).select().maybeSingle();
-
-          if (insertErr) {
-            console.error(`[DEBUG] Error force-seeding badge '${localBadge.name}':`, insertErr);
-          } else {
-            console.log(`[DEBUG] Successfully force-seeded badge '${localBadge.name}'`);
-            dbBadge = insertedBadge;
-          }
+          };
         }
       }
 

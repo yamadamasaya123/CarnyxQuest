@@ -182,6 +182,45 @@ export default function LiveFasting({ profileId, onFastingComplete }: LiveFastin
       .padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
   };
 
+  const getFastingDisplayStatus = () => {
+    if (activeSession) {
+      return {
+        status: language === "id" ? "AKTIF" : "ACTIVE",
+        protocol: language === "id" ? "Sedang Berjalan" : "In Progress",
+        badgeClass: "bg-amber-500/10 text-amber-400 border-amber-500/20",
+        dateText: language === "id" ? "Perburuan sedang berlangsung..." : "Hunt in progress..."
+      };
+    }
+
+    if (fastHistory.length === 0) {
+      return {
+        status: language === "id" ? "Belum Dimulai" : "Not Started",
+        protocol: language === "id" ? "Tidak Ada Sesi Aktif" : "No Active Session",
+        badgeClass: "bg-slate-900 text-slate-500 border-slate-800",
+        dateText: ""
+      };
+    }
+
+    // Since activeSession is null, look at the first non-active (concluded) session in fastHistory
+    const lastConcluded = fastHistory.find(h => h.status !== "active") || fastHistory[0];
+
+    if (lastConcluded.status === "completed") {
+      return {
+        status: language === "id" ? "SELESAI" : "COMPLETED",
+        protocol: language === "id" ? "Selesai" : "Completed",
+        badgeClass: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
+        dateText: (language === "id" ? "Dicatat pada: " : "Logged at: ") + new Date(lastConcluded.createdAt).toLocaleDateString()
+      };
+    } else {
+      return {
+        status: language === "id" ? "TERPUTUS" : "STOPPED",
+        protocol: language === "id" ? "Terputus" : "Interrupted",
+        badgeClass: "bg-red-500/10 text-red-500 border-red-500/20",
+        dateText: (language === "id" ? "Dicatat pada: " : "Logged at: ") + new Date(lastConcluded.createdAt).toLocaleDateString()
+      };
+    }
+  };
+
   const startNewFast = async () => {
     if (isActionLoading) return;
     try {
@@ -435,11 +474,12 @@ export default function LiveFasting({ profileId, onFastingComplete }: LiveFastin
                 <button
                   onClick={() => stopOrCompleteFast("stop")}
                   disabled={isActionLoading}
-                  className="bg-red-950/40 border border-red-500/20 hover:border-red-500/40 text-red-400 font-bold px-3 text-xs rounded-xl flex items-center gap-1 cursor-pointer disabled:opacity-50"
-                  title="Abort fast"
+                  className="bg-red-950/40 border border-red-500/20 hover:border-red-500/40 text-red-400 font-bold px-3 text-xs rounded-xl flex items-center gap-1 cursor-pointer disabled:opacity-50 font-mono whitespace-nowrap"
+                  title={language === "id" ? "Hentikan Puasa" : "Stop Fasting"}
                 >
-                  <AlertTriangle className="w-4 h-4" />
-                  <span className="hidden md:inline">{language === "id" ? "BATAL" : "ABORT"}</span>
+                  <AlertTriangle className="w-4 h-4 text-red-500 shrink-0" />
+                  <span className="hidden md:inline">{language === "id" ? "Hentikan Puasa" : "Stop Fasting"}</span>
+                  <span className="inline md:hidden">{language === "id" ? "STOP" : "STOP"}</span>
                 </button>
               </>
             )}
@@ -494,33 +534,28 @@ export default function LiveFasting({ profileId, onFastingComplete }: LiveFastin
         {/* FAST HISTORY SNAPSHOT */}
         <div className="pt-3 border-t border-slate-900 font-mono text-[10px]">
           <span className="text-slate-500 uppercase font-bold tracking-wider block mb-2">
-            {language === "id" ? "PUASA EKSPEDISI TERAKHIR" : "LAST EXPEDITION FAST"}
+            {language === "id" ? "PUASA EKSPEDISI TERAKHIR / STATUS" : "LAST EXPEDITION FAST / STATUS"}
           </span>
-          {fastHistory.length === 0 ? (
-            <span className="text-slate-600 italic block font-mono">
-              {language === "id" ? "Tidak ada koordinat riwayat puasa selesai yang ditemukan." : "No completed historical fast coordinates found."}
-            </span>
-          ) : (
-            <div className="bg-slate-900/40 p-2.5 rounded-lg border border-slate-800 flex justify-between items-center">
-              <div>
-                <span className="text-slate-200 block font-bold">
-                  {language === "id"
-                    ? `Protokol: ${fastHistory[0].status === "completed" ? "Berhasil Diselesaikan" : "Terputus"}`
-                    : `Protocol: ${fastHistory[0].status === "completed" ? "Successfully Completed" : "Interrupted"}`}
-                </span>
-                <span className="text-slate-500 block text-[9px]">
-                  {language === "id" ? "Dicatat pada: " : "Logged at: "}{new Date(fastHistory[0].createdAt).toLocaleDateString()}
+          {(() => {
+            const display = getFastingDisplayStatus();
+            return (
+              <div className="bg-slate-900/40 p-2.5 rounded-lg border border-slate-800 flex justify-between items-center">
+                <div>
+                  <span className="text-slate-200 block font-bold">
+                    {language === "id" ? `Protokol: ${display.protocol}` : `Protocol: ${display.protocol}`}
+                  </span>
+                  {display.dateText && (
+                    <span className="text-slate-500 block text-[9px] mt-0.5">
+                      {display.dateText}
+                    </span>
+                  )}
+                </div>
+                <span className={`text-[10px] px-2 py-0.5 rounded uppercase font-bold border ${display.badgeClass}`}>
+                  {display.status}
                 </span>
               </div>
-              <span className={`text-[10px] px-2 py-0.5 rounded uppercase font-bold ${
-                fastHistory[0].status === "completed" ? "bg-emerald-500/10 text-emerald-400" : "bg-red-500/10 text-red-500"
-              }`}>
-                {language === "id"
-                  ? (fastHistory[0].status === "completed" ? "SELESAI" : "TERPUTUS")
-                  : fastHistory[0].status}
-              </span>
-            </div>
-          )}
+            );
+          })()}
         </div>
       </div>
     </div>
