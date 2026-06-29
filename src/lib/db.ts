@@ -1061,94 +1061,9 @@ class SupabaseDB {
   public async login(email: string, password?: string, username?: string): Promise<{ profile: UserProfile | null; success: boolean; error?: string }> {
     let loginEmail = email.toLowerCase().trim();
     const finalPass = password || "tribalpassword123";
+    const targetUsername = username?.trim();
 
-    if (username && username.trim() !== "") {
-      const { data: userProfile, error: profileErr } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('display_name', username.trim())
-        .maybeSingle();
-
-      if (profileErr || !userProfile) {
-        return { profile: null, success: false, error: "Invalid login credentials" };
-      }
-
-      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-        email: loginEmail,
-        password: finalPass
-      });
-
-      if (authError) {
-        const isRateLimit = (msg: string): boolean => {
-          const norm = (msg || "").toLowerCase();
-          return norm.includes("rate limit") || norm.includes("rate_limit") || norm.includes("too many requests") || (norm.includes("exceeded") && norm.includes("email"));
-        };
-        if (isRateLimit(authError.message)) {
-          return {
-            profile: null,
-            success: false,
-            error: "Login is temporarily rate-limited. Please try again later."
-          };
-        }
-        return { profile: null, success: false, error: "Invalid login credentials" };
-      }
-
-      if (authData.user) {
-        if (authData.user.id !== userProfile.id) {
-          await supabase.auth.signOut();
-          return { profile: null, success: false, error: "Invalid login credentials" };
-        }
-
-        const { data: profile } = await supabase.from('profiles').select('*').eq('id', authData.user.id).maybeSingle();
-        if (profile) {
-          localStorage.setItem("carnyx_active_user_id", authData.user.id);
-          localStorage.setItem("carnyx_active_user_email", authData.user.email || "");
-          return { profile: mapProfile(profile), success: true };
-        } else {
-          const fallbackProfile: UserProfile = {
-            id: authData.user.id,
-            displayName: username.trim(),
-            primalClass: PrimalClass.Chieftain,
-            level: 1,
-            experience: 0,
-            goldPoints: 100,
-            createdAt: new Date().toISOString(),
-          };
-
-          await supabase.from('profiles').insert({
-            id: fallbackProfile.id,
-            display_name: fallbackProfile.displayName,
-            primal_class: fallbackProfile.primalClass,
-            level: fallbackProfile.level,
-            experience: fallbackProfile.experience,
-            gold_points: fallbackProfile.goldPoints,
-          });
-
-          const { data: str } = await supabase.from('streaks').select('*').eq('profile_id', fallbackProfile.id).maybeSingle();
-          if (!str) {
-            await supabase.from('streaks').insert({
-              profile_id: fallbackProfile.id,
-              current_streak: 0,
-              longest_streak: 0,
-              marrow_shields_active: 1
-            });
-          }
-
-          localStorage.setItem("carnyx_active_user_id", fallbackProfile.id);
-          localStorage.setItem("carnyx_active_user_email", authData.user.email || "");
-          return { profile: mapProfile(fallbackProfile), success: true };
-        }
-      }
-      return { profile: null, success: false, error: "Invalid login credentials" };
-    }
-
-    if (!email.includes("@")) {
-      const { data: userProfile } = await supabase.from('profiles').select('*').eq('display_name', email).maybeSingle();
-      if (!userProfile) {
-        return { profile: null, success: false, error: "No profile matching that moniker was found." };
-      }
-    }
-
+    // 1. Sign in with Supabase Auth first using the email and password
     const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
       email: loginEmail,
       password: finalPass
@@ -1166,52 +1081,68 @@ class SupabaseDB {
           error: "Login is temporarily rate-limited. Please try again later."
         };
       }
-      return { profile: null, success: false, error: authError.message };
+      return { profile: null, success: false, error: "Invalid login credentials" };
     }
 
-    if (authData.user) {
-      const { data: profile } = await supabase.from('profiles').select('*').eq('id', authData.user.id).maybeSingle();
-      if (profile) {
-        localStorage.setItem("carnyx_active_user_id", authData.user.id);
-        localStorage.setItem("carnyx_active_user_email", authData.user.email || "");
-        return { profile: mapProfile(profile), success: true };
-      } else {
-        const fallbackProfile: UserProfile = {
-          id: authData.user.id,
-          displayName: loginEmail.split("@")[0] || "TribeMember",
-          primalClass: PrimalClass.Chieftain,
-          level: 1,
-          experience: 0,
-          goldPoints: 100,
-          createdAt: new Date().toISOString(),
-        };
+    if (!authData.user) {
+      return { profile: null, success: false, error: "Invalid login credentials" };
+    }
 
-        await supabase.from('profiles').insert({
-          id: fallbackProfile.id,
-          display_name: fallbackProfile.displayName,
-          primal_class: fallbackProfile.primalClass,
-          level: fallbackProfile.level,
-          experience: fallbackProfile.experience,
-          gold_points: fallbackProfile.goldPoints,
-        });
+    // 2. Now authenticated. Retrieve user profile.
+    const { data: profile } = await supabase.from('profiles').select('*').eq('id', authData.user.id).maybeSingle();
 
-        const { data: str } = await supabase.from('streaks').select('*').eq('profile_id', fallbackProfile.id).maybeSingle();
-        if (!str) {
-          await supabase.from('streaks').insert({
-            profile_id: fallbackProfile.id,
-            current_streak: 0,
-            longest_streak: 0,
-            marrow_shields_active: 1
-          });
+    if (profile) {
+      // Validate that username is correct and belongs to this account
+      if (targetUsername && targetUsername !== "") {
+        if (profile.display_name !== targetUsername) {
+          await supabase.auth.signOut();
+          return { profile: null, success: false, error: "Invalid login credentials" };
         }
-
-        localStorage.setItem("carnyx_active_user_id", fallbackProfile.id);
-        localStorage.setItem("carnyx_active_user_email", authData.user.email || "");
-        return { profile: mapProfile(fallbackProfile), success: true };
       }
-    }
 
-    return { profile: null, success: false, error: "Tribe boundaries unverified." };
+      localStorage.setItem("carnyx_active_user_id", authData.user.id);
+      localStorage.setItem("carnyx_active_user_email", authData.user.email || "");
+      return { profile: mapProfile(profile), success: true };
+    } else {
+      // If profile doesn't exist, create fallback profile
+      const fallbackProfile: UserProfile = {
+        id: authData.user.id,
+        displayName: (targetUsername && targetUsername !== "") ? targetUsername : (authData.user.email?.split("@")[0] || "TribeMember"),
+        primalClass: PrimalClass.Chieftain,
+        level: 1,
+        experience: 0,
+        goldPoints: 100,
+        createdAt: new Date().toISOString(),
+      };
+
+      const { error: insertErr } = await supabase.from('profiles').insert({
+        id: fallbackProfile.id,
+        display_name: fallbackProfile.displayName,
+        primal_class: 'Chieftain',
+        level: fallbackProfile.level,
+        experience: fallbackProfile.experience,
+        gold_points: fallbackProfile.goldPoints,
+      });
+
+      if (insertErr) {
+        await supabase.auth.signOut();
+        return { profile: null, success: false, error: insertErr.message };
+      }
+
+      const { data: str } = await supabase.from('streaks').select('*').eq('profile_id', fallbackProfile.id).maybeSingle();
+      if (!str) {
+        await supabase.from('streaks').insert({
+          profile_id: fallbackProfile.id,
+          current_streak: 0,
+          longest_streak: 0,
+          marrow_shields_active: 1
+        });
+      }
+
+      localStorage.setItem("carnyx_active_user_id", fallbackProfile.id);
+      localStorage.setItem("carnyx_active_user_email", authData.user.email || "");
+      return { profile: mapProfile(fallbackProfile), success: true };
+    }
   }
 
   public async logout(): Promise<void> {
