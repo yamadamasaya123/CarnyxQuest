@@ -161,6 +161,75 @@ export function getRequiredXpForLevel(level: number): number {
   return level * 100 + (level - 1) * 150;
 }
 
+// Early Level XP Boost Helpers
+export function isXpBoostActive(profile: { level: number } | null | undefined): boolean {
+  if (!profile) return false;
+  return profile.level < 5;
+}
+
+export function calculateXpReward(
+  activityType: "checkin" | "meal" | "workout" | "fasting" | "challenge" | "badge" | string,
+  profile: { level: number } | null | undefined,
+  extraData?: {
+    elapsedHours?: number;
+    challengeId?: string;
+    badgeId?: string;
+    rewardXp?: number;
+  }
+): number {
+  switch (activityType) {
+    case "checkin":
+    case "daily_checkin":
+      return isXpBoostActive(profile) ? 60 : 10;
+    case "meal":
+    case "meal_log":
+      return isXpBoostActive(profile) ? 30 : 5;
+    case "workout":
+    case "workout_log":
+      return isXpBoostActive(profile) ? 100 : 60;
+    case "fasting":
+    case "fasting_session": {
+      const elapsedHours = extraData?.elapsedHours ?? 0;
+      return Math.min(100, Math.max(15, Math.round(elapsedHours * 4))) + 50;
+    }
+    case "challenge":
+    case "challenge_completed": {
+      if (extraData?.challengeId) {
+        const defaultChall = DEFAULT_CHALLENGES.find(c => c.id === extraData.challengeId);
+        if (defaultChall) {
+          return defaultChall.rewardXp;
+        }
+      }
+      return extraData?.rewardXp ?? 100;
+    }
+    case "badge":
+    case "achievement":
+    case "badge_unlocked": {
+      if (extraData?.badgeId) {
+        const defaultBadge = DEFAULT_BADGES.find(b => b.id === extraData.badgeId || b.requirement === extraData.badgeId);
+        if (defaultBadge) {
+          return defaultBadge.rewardXp;
+        }
+      }
+      return extraData?.rewardXp ?? 50;
+    }
+    default:
+      return extraData?.rewardXp ?? 0;
+  }
+}
+
+export function getCheckInXp(profile: { level: number } | null | undefined): number {
+  return calculateXpReward("checkin", profile);
+}
+
+export function getMealXp(profile: { level: number } | null | undefined): number {
+  return calculateXpReward("meal", profile);
+}
+
+export function getWorkoutXp(profile: { level: number } | null | undefined): number {
+  return calculateXpReward("workout", profile);
+}
+
 // Check state and level up returning true if leveled up
 export function addXpToProfile(profile: UserProfile, xp: number, txSource: string): { profile: UserProfile; transaction: XpTransaction; leveledUp: boolean } {
   let experience = profile.experience + xp;
@@ -708,7 +777,7 @@ class SupabaseDB {
 
       const badgeId = dbBadge.id;
       const badgeName = dbBadge.name;
-      const badgeRewardXp = dbBadge.reward_xp;
+      const badgeRewardXp = calculateXpReward("badge", profile, { badgeId: criteria, rewardXp: dbBadge.reward_xp });
 
       console.log(`[DEBUG] Resolved Dynamic Badge: Requirement=${dbBadge.requirement}, ID=${badgeId}, Name=${badgeName}, RewardXP=${badgeRewardXp}`);
 
@@ -1255,10 +1324,10 @@ class SupabaseDB {
     let totalXpEarned = 0;
     let combinedLeveledUp = false;
 
-    // 1. Award base XP for the workout (60 XP)
-    const baseWorkoutXp = 60;
+    // 1. Award base XP for the workout (Boosted or Normal)
     const profile = await this.getProfile(profileId);
     if (profile) {
+      const baseWorkoutXp = getWorkoutXp(profile);
       const initialLevel = profile.level;
       const txSource = `Logged Workout: ${log.exerciseName}`;
       const { profile: updatedProfile, leveledUp: lvlCheck } = addXpToProfile(
@@ -1283,8 +1352,9 @@ class SupabaseDB {
       console.log(`[DEBUG] Checking first_workout badge triggers...`);
       const isGranted = await this.grantBadge(profileId, "first_workout", true);
       if (isGranted) {
-        console.log(`[DEBUG] first_workout badge successfully granted! 120 XP awarded.`);
-        totalXpEarned += 120;
+        const badgeXp = calculateXpReward("badge", profile, { badgeId: "first_workout", rewardXp: 120 });
+        console.log(`[DEBUG] first_workout badge successfully granted! ${badgeXp} XP awarded.`);
+        totalXpEarned += badgeXp;
         const newestPf = await this.getProfile(profileId);
         if (newestPf && profile) {
           combinedLeveledUp = newestPf.level > profile.level;
@@ -1337,23 +1407,24 @@ class SupabaseDB {
 
     const meal = mapMeal(insertedMeal);
 
-    // Gamification check: awards 5 XP
+    // Gamification check: awards XP (Boosted or Normal)
     const profile = await this.getProfile(profileId);
     if (!profile) {
       return { meal, leveledUp: false, xpEarned: 0 };
     }
 
     const initialLevel = profile.level;
-    let totalXpEarned = 5;
+    const mealXp = getMealXp(profile);
+    let totalXpEarned = mealXp;
 
-    const { profile: updatedProfile, transaction, leveledUp: stdLeveledUp } = addXpToProfile(profile, 5, `Logged meal: ${item.cutType}`);
+    const { profile: updatedProfile, transaction, leveledUp: stdLeveledUp } = addXpToProfile(profile, mealXp, `Logged meal: ${item.cutType}`);
     await this.updateProfile(updatedProfile);
 
     // Write XP transactions
     await supabase.from('xp_transactions').insert({
       profile_id: profileId,
       source: transaction.source,
-      xp_amount: 5,
+      xp_amount: mealXp,
     });
 
     let combinedLeveledUp = stdLeveledUp;
@@ -1363,8 +1434,9 @@ class SupabaseDB {
       console.log(`[DEBUG] Checking first_zero_carb_meal zero-carb badge criteria...`);
       const isGranted = await this.grantBadge(profileId, "first_zero_carb_meal", true);
       if (isGranted) {
-        console.log(`[DEBUG] first_zero_carb_meal successfully granted! 50 XP awarded.`);
-        totalXpEarned += 50;
+        const badgeXp = calculateXpReward("badge", profile, { badgeId: "first_zero_carb_meal", rewardXp: 50 });
+        console.log(`[DEBUG] first_zero_carb_meal successfully granted! ${badgeXp} XP awarded.`);
+        totalXpEarned += badgeXp;
         const newestPf = await this.getProfile(profileId);
         if (newestPf) {
           combinedLeveledUp = newestPf.level > initialLevel;
@@ -1382,7 +1454,7 @@ class SupabaseDB {
         nextStatus = ChallengeStatus.Completed;
         const currentProf = await this.getProfile(profileId);
         if (currentProf) {
-          const chXp = 200;
+          const chXp = calculateXpReward("challenge", currentProf, { challengeId: "c1", rewardXp: 200 });
           const { profile: updatedWithChall, transaction: challTx } = addXpToProfile(currentProf, chXp, "Completed Challenge: The Mammoth Raid");
           await this.updateProfile(updatedWithChall);
           await supabase.from('xp_transactions').insert({
@@ -1534,7 +1606,7 @@ class SupabaseDB {
             // Award Challenge Completion Reward XP
             const currentProf = await this.getProfile(profileId);
             if (currentProf) {
-              const chXp = challenge.reward_xp ?? 100;
+              const chXp = calculateXpReward("challenge", currentProf, { challengeId: challenge.id, rewardXp: challenge.reward_xp ?? 100 });
               const challengeTxSource = `Completed Challenge: ${title}`;
               
               // Double check to prevent duplicate reward payouts
@@ -1661,10 +1733,10 @@ class SupabaseDB {
 
     const streak = mapStreak(updatedStreak);
 
-    // XP transactional log
+    // XP transactional log (Boosted or Normal)
     const profile = await this.getProfile(profileId);
     let leveledUp = false;
-    let xpEarnings = 10;
+    let xpEarnings = getCheckInXp(profile);
 
     if (profile) {
       const { profile: updatedProfile, transaction, leveledUp: lvlCheck } = addXpToProfile(profile, xpEarnings, "Primal Daily Check-in");
@@ -1696,9 +1768,10 @@ class SupabaseDB {
         status = ChallengeStatus.Completed;
         const currentProf = await this.getProfile(profileId);
         if (currentProf) {
-          const { profile: upCh, transaction: chTx } = addXpToProfile(currentProf, 150, "Completed Challenge: Ancestral Consistency");
+          const chXp = calculateXpReward("challenge", currentProf, { challengeId: "c3", rewardXp: 150 });
+          const { profile: upCh, transaction: chTx } = addXpToProfile(currentProf, chXp, "Completed Challenge: Ancestral Consistency");
           await this.updateProfile(upCh);
-          await supabase.from('xp_transactions').insert({ profile_id: profileId, source: chTx.source, xp_amount: 150 });
+          await supabase.from('xp_transactions').insert({ profile_id: profileId, source: chTx.source, xp_amount: chXp });
         }
       }
       await supabase.from('user_challenges').update({
@@ -1935,7 +2008,7 @@ class SupabaseDB {
 
     // Only grant completion reward if action === "complete" AND meetsTarget
     if (action === "complete" && meetsTarget) {
-      xpEarned = Math.min(100, Math.max(15, Math.round(elapsedHours * 4))) + 50; // includes 50 completion bonus
+      xpEarned = calculateXpReward("fasting", initialPf, { elapsedHours });
 
       const txSource = `Completed Fasting: ${protocol?.name || "Target"} (Session: ${sessionId})`;
       
@@ -1971,8 +2044,9 @@ class SupabaseDB {
         console.log(`[DEBUG] Checking first_fast_completion fast completed badge criteria...`);
         const isGranted = await this.grantBadge(profileId, "first_fast_completion", meetsTarget);
         if (isGranted) {
-          console.log(`[DEBUG] first_fast_completion successfully granted! 100 XP awarded.`);
-          xpEarned += 100;
+          const badgeXp = calculateXpReward("badge", initialPf, { badgeId: "first_fast_completion", rewardXp: 100 });
+          console.log(`[DEBUG] first_fast_completion successfully granted! ${badgeXp} XP awarded.`);
+          xpEarned += badgeXp;
           const newestProfile = await this.getProfile(profileId);
           if (newestProfile) {
             leveledUp = newestProfile.level > initialLevel;
@@ -1994,7 +2068,8 @@ class SupabaseDB {
             const { data: hasChallengeTx } = await supabase.from('xp_transactions').select('*').eq('profile_id', profileId).eq('source', challengeTxSource).maybeSingle();
 
             if (!hasChallengeTx) {
-              const { profile: upPf, leveledUp: chLvlUp } = addXpToProfile(pf2, 300, challengeTxSource);
+              const chXp = calculateXpReward("challenge", pf2, { challengeId: "c2", rewardXp: 300 });
+              const { profile: upPf, leveledUp: chLvlUp } = addXpToProfile(pf2, chXp, challengeTxSource);
               if (chLvlUp) {
                 leveledUp = true;
               }
@@ -2002,9 +2077,9 @@ class SupabaseDB {
               await supabase.from('xp_transactions').insert({
                 profile_id: profileId,
                 source: challengeTxSource,
-                xp_amount: 300
+                xp_amount: chXp
               });
-              xpEarned += 300;
+              xpEarned += chXp;
             }
           }
           await supabase.from('user_challenges').update({

@@ -103,6 +103,7 @@ export default function App() {
     window.dispatchEvent(new Event("checkins_updated"));
     window.dispatchEvent(new Event("meals_updated"));
     window.dispatchEvent(new Event("weight_updated"));
+    window.dispatchEvent(new Event("profiles_updated"));
   };
 
   return (

@@ -2,5 +2,5 @@
   "name": "CarnyxQuest",
   "description": "Track your progress, complete challenges, and stay consistent on your carnivore journey.",
   "requestFramePermissions": [],
-  "majorCapabilities": []
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

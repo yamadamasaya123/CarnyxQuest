@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { db, getRequiredXpForLevel } from "../lib/db";
+import { db, getRequiredXpForLevel, getCheckInXp, isXpBoostActive } from "../lib/db";
 import { UserProfile, Streak, DailyCheckIn, XpTransaction, PrimalClass, ShieldLog } from "../types";
 import { useLanguage } from "../lib/LanguageContext";
 import {
@@ -107,6 +107,7 @@ export default function LiveDashboard({
     window.addEventListener("checkins_updated", handleRefresh);
     window.addEventListener("weight_updated", handleRefresh);
     window.addEventListener("shields_updated", handleRefresh);
+    window.addEventListener("profiles_updated", handleRefresh);
 
     return () => {
       window.removeEventListener("fasting_history_updated", handleRefresh);
@@ -114,6 +115,7 @@ export default function LiveDashboard({
       window.removeEventListener("checkins_updated", handleRefresh);
       window.removeEventListener("weight_updated", handleRefresh);
       window.removeEventListener("shields_updated", handleRefresh);
+      window.removeEventListener("profiles_updated", handleRefresh);
     };
   }, [profileId, onRefreshMetricsTrigger]);
 
@@ -289,6 +291,23 @@ export default function LiveDashboard({
               ></div>
             </div>
           </div>
+
+          {/* EARLY LEVEL XP BOOST BANNER */}
+          {isXpBoostActive(profile) && (
+            <div className="mt-4 p-3.5 bg-amber-500/10 border border-amber-500/20 rounded-xl flex items-start gap-2.5 animate-pulse">
+              <Zap className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+              <div className="space-y-0.5">
+                <p className="text-xs font-bold text-amber-350 font-mono">
+                  {language === "id" ? "Boost XP Level Awal Aktif" : "Early Level XP Boost Active"}
+                </p>
+                <p className="text-[11px] text-slate-300 leading-normal">
+                  {language === "id"
+                    ? "Dapatkan bonus XP hingga Level 5 agar fitur utama lebih cepat terbuka."
+                    : "Earn bonus XP until Level 5 to unlock core features faster."}
+                </p>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* DAILY REVIEW CHECK-IN FORM */}
@@ -350,7 +369,7 @@ export default function LiveDashboard({
                 ) : (
                   <>
                     <Zap className="w-3.5 h-3.5 text-amber-100" />
-                    <span>{language === "id" ? "Selesaikan Pemeriksaan Harian (+10 XP)" : "Complete Check-In (+10 XP)"}</span>
+                    <span>{language === "id" ? `Selesaikan Pemeriksaan Harian (+${getCheckInXp(profile)} XP)` : `Complete Check-In (+${getCheckInXp(profile)} XP)`}</span>
                   </>
                 )}
               </button>
