@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { db } from "../lib/db";
+import { db, getWorkoutXp } from "../lib/db";
 import { useLanguage } from "../lib/LanguageContext";
 import { WorkoutLog } from "../types";
 import {
@@ -45,6 +45,7 @@ export default function LiveWorkouts({ profileId, onWorkoutLogged }: LiveWorkout
 
   // Exercises history logs
   const [workoutHistory, setWorkoutHistory] = useState<WorkoutLog[]>([]);
+  const [profile, setProfile] = useState<any | null>(null);
   const [loadingHistory, setLoadingHistory] = useState<boolean>(true);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [submitFeedback, setSubmitFeedback] = useState<{
@@ -71,6 +72,8 @@ export default function LiveWorkouts({ profileId, onWorkoutLogged }: LiveWorkout
       setLoadingHistory(true);
       const history = await db.getWorkoutLogs(profileId);
       setWorkoutHistory(history);
+      const prof = await db.getProfile(profileId);
+      setProfile(prof);
     } catch (err) {
       console.error("Failed to load workout history:", err);
     } finally {
@@ -437,7 +440,7 @@ export default function LiveWorkouts({ profileId, onWorkoutLogged }: LiveWorkout
               ) : (
                 <>
                   <Zap className="w-4 h-4 text-white fill-current" />
-                  <span>{t("logWorkoutButton")} (+60 XP)</span>
+                  <span>{t("logWorkoutButton")} (+{getWorkoutXp(profile)} XP)</span>
                 </>
               )}
             </button>
@@ -513,7 +516,7 @@ export default function LiveWorkouts({ profileId, onWorkoutLogged }: LiveWorkout
                       </div>
                       <div className="flex items-center gap-0.5 text-amber-500 font-bold uppercase text-[9px]">
                         <Zap className="w-3 h-3 fill-current" />
-                        <span>+60 XP LOG</span>
+                        <span>+{getWorkoutXp(profile)} XP LOG</span>
                       </div>
                     </div>
                   </div>

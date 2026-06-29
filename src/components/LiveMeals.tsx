@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { KetoRatio } from "../types";
-import { db } from "../lib/db";
+import { db, getMealXp } from "../lib/db";
 import { useLanguage } from "../lib/LanguageContext";
 import {
   Flame,
@@ -45,10 +45,13 @@ export default function LiveMeals({ profileId, onLoggedSuccess, onSuccessNotific
 
   // History list
   const [mealsHistory, setMealsHistory] = useState<any[]>([]);
+  const [profile, setProfile] = useState<any | null>(null);
 
   const loadMeals = async () => {
     const list = await db.getMeals(profileId);
     setMealsHistory(list);
+    const prof = await db.getProfile(profileId);
+    setProfile(prof);
   };
 
   useEffect(() => {
@@ -357,7 +360,7 @@ export default function LiveMeals({ profileId, onLoggedSuccess, onSuccessNotific
             ) : (
               <>
                 <Plus className="w-4 h-4" />
-                <span>{language === "id" ? "Catat Pesta Mangsa (+5 XP)" : "Secure Log in meals_log (+5 XP)"}</span>
+                <span>{language === "id" ? `Catat Pesta Mangsa (+${getMealXp(profile)} XP)` : `Secure Log in meals_log (+${getMealXp(profile)} XP)`}</span>
               </>
             )}
           </button>
